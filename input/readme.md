@@ -1,0 +1,1 @@
+The original lending club data is too large for being stored. GitHub does not allow me to push it to the remote repository. Thus, I will leave only the data dictionary here. The original data can be found in: https://www.kaggle.com/datasets/wordsforthewise/lending-club
