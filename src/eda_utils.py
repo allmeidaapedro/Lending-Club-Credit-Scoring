@@ -166,3 +166,130 @@ def check_outliers(data, features):
     
     except Exception as e:
         raise CustomException(e, sys)
+    
+
+def default_analysis(cat_variable, variable_name, data, continuous=False, not_ordered=False):
+    '''
+    Perform default analysis on a discrete or discretized continuous variable.
+
+    This function analyzes the default behavior based on a discrete or a discretized continuous variable, providing insights such as the proportion
+    of good and bad borrowers per category, weight of evidence (WoE), information value (IV), and other relevant statistics.
+
+    Args:
+    - cat_variable: Discrete or discretized continuous variable to be analyzed.
+    - variable_name: Name of the variable (used for creating a new variable indicating the categories).
+    - data: DataFrame containing the data for analysis.
+    - continuous: Whether the input variable is continuous. Default is False.
+    - not_ordered: Whether the variable has an ordinal/continuous relationship. Default is False.
+
+    Returns:
+    - DataFrame: Analysis results including counts, proportions, weight of evidence and information value.
+
+    Raises:
+    - CustomException: If an error occurs during the analysis.
+
+    Example:
+    ```python
+    result = default_analysis(data['loan_amnt'], 'loan_amnt', data, continuous=True)
+    ```
+    '''
+    try:
+        # Obtaining the discrete variable (already cut) and a copy of the original data.
+        cat_name = f'{variable_name}_cat'
+        default_analysis_df = data.copy()
+        default_analysis_df[cat_name] = cat_variable
+        
+        if continuous:
+            default_analysis_df[cat_name] = default_analysis_df[cat_name].apply(lambda x: f'{round(x.left)}-{round(x.right)}')
+        
+        # Grouping the data and adding the interesting columns.
+        grouped_n_obs = default_analysis_df.groupby([cat_name])[['default']].count().reset_index().rename(columns={'default': 'n_obs'})
+        grouped_n_obs['obs_proportion (%)'] = grouped_n_obs['n_obs'] / grouped_n_obs['n_obs'].sum()
+        good_proportion = default_analysis_df.groupby([cat_name])[['default']].mean().reset_index().rename(columns={'default': 'good_row (%)'}).drop(columns=[cat_name])
+        default_analysis_df = pd.concat([grouped_n_obs, good_proportion], axis=1)
+        default_analysis_df['bad_row (%)'] = (1 - default_analysis_df['good_row (%)']) 
+        default_analysis_df['n_good'] = default_analysis_df['good_row (%)'] * default_analysis_df['n_obs'] 
+        default_analysis_df['n_bad'] = default_analysis_df['bad_row (%)'] * default_analysis_df['n_obs']
+        default_analysis_df['good_col (%)'] = default_analysis_df['n_good'] / default_analysis_df['n_good'].sum() * 100
+        default_analysis_df['bad_col (%)'] = default_analysis_df['n_bad'] / default_analysis_df['n_bad'].sum() * 100
+        default_analysis_df['g/b'] = default_analysis_df['good_row (%)'] / default_analysis_df['bad_row (%)']
+        default_analysis_df['woe'] = np.log((default_analysis_df['n_good'] / default_analysis_df['n_good'].sum()) / \
+                                            (default_analysis_df['n_bad'] / default_analysis_df['n_bad'].sum()))
+        if not_ordered:
+            default_analysis_df = default_analysis_df.sort_values(by=['woe'])
+        default_analysis_df['iv'] = ((default_analysis_df['n_good'] / default_analysis_df['n_good'].sum()) - \
+                                    (default_analysis_df['n_bad'] / default_analysis_df['n_bad'].sum())) * \
+                                    default_analysis_df['woe']
+        default_analysis_df['obs_proportion (%)'] = default_analysis_df['obs_proportion (%)'] * 100
+        default_analysis_df['good_row (%)'] = default_analysis_df['good_row (%)'] * 100
+        default_analysis_df['bad_row (%)'] = default_analysis_df['bad_row (%)'] * 100
+        default_analysis_df = default_analysis_df.round(2)
+        default_analysis_df.loc[len(default_analysis_df.index)] = ['total', default_analysis_df['n_obs'].sum(), 100, 
+                                                                round((default_analysis_df['n_good'].sum() / default_analysis_df['n_obs'].sum() * 100), 2),
+                                                                round((default_analysis_df['n_bad'].sum() / default_analysis_df['n_obs'].sum() * 100), 2), default_analysis_df['n_good'].sum(),
+                                                                default_analysis_df['n_bad'].sum(), 100, 100, '-', '-', default_analysis_df['iv'].sum()]
+        default_analysis_df.index = default_analysis_df[cat_name]
+        default_analysis_df = default_analysis_df.drop(columns=[cat_name])
+        
+        return default_analysis_df
+    except Exception as e:
+        raise CustomException(e, sys)
+
+
+def plot_woe_bad_rate_by_variable(data, variable_name, figsize=(20, 5), rotation=None):
+    '''
+    Plot Weight of Evidence (WoE) and Bad Rate for each category of a variable.
+
+    This function creates a subplot with two plots:
+    - The first plot displays the WoE values for each category.
+    - The second plot shows the composition of Good and Bad Rates for each category.
+
+    Args:
+    - data: DataFrame containing WoE and Bad Rate information.
+    - variable_name: Name of the variable for labeling.
+    - figsize: Tuple specifying the size of the figure. Default is (20, 5).
+    - rotation: Rotation angle for x-axis labels in the first plot. Default is None.
+
+    Returns:
+    - None
+
+    Raises:
+    - CustomException: If an error occurs during the plotting.
+
+    Example:
+    ```python
+    plot_woe_bad_rate_by_variable(my_data, 'CreditScore', figsize=(15, 6), rotation=45)
+    ```
+
+    '''
+    try:
+        fig, ax = plt.subplots(1, 2, figsize=figsize)
+        
+        categories = data.reset_index().iloc[:-1, 0]
+        woe = data.reset_index().iloc[:-1, -2].astype('float')
+        good_row = data.reset_index().iloc[:-1, 3].astype('float')
+        bad_row = data.reset_index().iloc[:-1, 4].astype('float')
+
+        ax[0].plot(categories, woe, marker='o', linestyle='--')
+        ax[0].set_title(f'WoE by {variable_name}')
+        ax[0].set_xticks(categories.unique().tolist(), categories.unique().tolist(), rotation=rotation)
+        
+        good_bars = ax[1].barh(y=categories, width=good_row, color='#8a817c', label='Good')
+        bad_bars = ax[1].barh(y=categories, width=bad_row, left=good_row, color='#8d0801', label='Bad')
+
+        # Annotate percentage values inside each bar
+        for good_bar, bad_bar, good_rate, bad_rate in zip(good_bars, bad_bars, good_row, bad_row):
+            x_position_good = good_bar.get_x() + good_bar.get_width() / 2
+            x_position_bad = bad_bar.get_x() + bad_bar.get_width() / 2  
+            y_position = good_bar.get_y() + good_bar.get_height() / 2
+
+            ax[1].text(x_position_good, y_position, f'{good_rate}%', ha='center', va='center', color='white', fontsize=10)
+            ax[1].text(x_position_bad, y_position, f'{bad_rate}%', ha='center', va='center', color='white', fontsize=10)
+
+        ax[1].set_title('Default rate by Grade')
+        ax[1].xaxis.set_visible(False)
+        ax[1].invert_yaxis()
+        ax[1].grid(False)
+        ax[1].legend(bbox_to_anchor=(1, 1.1), loc='center')
+    except Exception as e:
+        raise CustomException(e, sys)
