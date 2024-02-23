@@ -287,6 +287,7 @@ def plot_woe_bad_rate_by_variable(data, variable_name, figsize=(20, 5), rotation
             ax[1].text(x_position_bad, y_position, f'{bad_rate}%', ha='center', va='center', color='white', fontsize=10)
 
         ax[1].set_title(f'Default rate by {variable_name}')
+        ax[1].set_yticks(range(len(categories)), categories)
         ax[1].xaxis.set_visible(False)
         ax[1].invert_yaxis()
         ax[1].grid(False)
