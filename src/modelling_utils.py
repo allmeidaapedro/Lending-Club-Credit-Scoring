@@ -26,9 +26,9 @@ from warnings import filterwarnings
 filterwarnings('ignore')
 
 
-class WoeDiscretizerBundler(BaseEstimator, TransformerMixin):
+class DiscretizerCombiner(BaseEstimator, TransformerMixin):
     '''
-    WoeDiscretizerBundler
+    DiscretizerCombiner
     
     Custom scikit-learn transformer for discretizing and bundling continuous feature categories based on predefined mappings.
     It discretizes and bundles category ranges in numerical continuous features based on similar WoE and balances the number of observations.
@@ -124,9 +124,9 @@ class WoeDiscretizerBundler(BaseEstimator, TransformerMixin):
             raise(CustomException(e, sys))
 
 
-class WoeBundler(BaseEstimator, TransformerMixin):
+class CatCombiner(BaseEstimator, TransformerMixin):
     '''
-    WoeBundler
+    CatCombiner
     
     Custom scikit-learn transformer for bundling categories based on predefined mappings.
     It bundles categories of categorical features contained in lists based on a previous 
@@ -245,9 +245,9 @@ class WoeBundler(BaseEstimator, TransformerMixin):
             raise(CustomException(e, sys))
         
 
-class MissingImputerCategory(BaseEstimator, TransformerMixin):
+class CatImputer(BaseEstimator, TransformerMixin):
     '''
-    MissingImputerCategory
+    CatImputer
     
     Custom scikit-learn transformer for imputing missing values in categorical features. 
     It imputes missing values in features when these missing values are treated as another 
@@ -309,9 +309,9 @@ class MissingImputerCategory(BaseEstimator, TransformerMixin):
             raise(CustomException(e, sys))
     
 
-class OneHotFeatureEncoder(BaseEstimator, TransformerMixin):
+class CatOneHotEncoder(BaseEstimator, TransformerMixin):
     '''
-    OneHotFeatureEncoder
+    CatOneHotEncoder
     
     Custom scikit-learn transformer for one-hot encoding features. It receives data containing
     only categorical features. The numerical continuous features have been discretized, and their
