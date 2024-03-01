@@ -107,15 +107,15 @@ class LogisticRegressionWithPvalues:
         except Exception as e:
             raise CustomException(e, sys)
     
-    def get_result_table(self):
+    def get_summary_table(self):
         try:
             # Collect beta coefficients, p-values and Wald statistics in a summary table.
             summary = self.model.summary2().tables[1]
             summary['Wald'] = summary['z'] ** 2
-            result = summary[['Coef.', 'P>|z|', 'Wald']]
-            result.columns = ['Beta Coefficient', 'P-Value', 'Wald Statistic']
-            result = result.sort_index()   
-            return result
+            summary_table = summary[['Coef.', 'P>|z|', 'Wald']]
+            summary_table.columns = ['Beta Coefficient', 'P-Value', 'Wald Statistic']
+            summary_table = summary_table.sort_index()   
+            return summary_table
         
         except Exception as e:
             raise CustomException(e, sys)
@@ -472,10 +472,10 @@ class CatOneHotEncoder(BaseEstimator, TransformerMixin):
         
     def transform(self, X):
         try:
-            # One-hot encoding the columns.
+            # One-hot encode the columns.
             X_one_hot = self.encoder.transform(X)
             
-            # Creating a dataframe for the one-hot encoded data.
+            # Create a dataframe for the one-hot encoded data.
             one_hot_df = pd.DataFrame(X_one_hot, columns=self.encoder.get_feature_names_out())
             
             return one_hot_df
