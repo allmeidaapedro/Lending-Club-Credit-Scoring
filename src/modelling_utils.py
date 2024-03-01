@@ -16,6 +16,7 @@ import matplotlib.pyplot as plt
 # Modeling.
 from sklearn.base import BaseEstimator, TransformerMixin
 from sklearn.preprocessing import OneHotEncoder
+import statsmodels.api as sm
 
 # Debugging.
 from src.exception import CustomException
@@ -25,6 +26,100 @@ import sys
 from warnings import filterwarnings
 filterwarnings('ignore')
 
+
+class LogisticRegressionWithPvalues:
+    '''
+    Custom logistic regression class with p-values for coefficient significance.
+
+    Attributes:
+    alpha (float): Regularization parameter. Default is 0.
+    method (str): Regularization method. Default is 'l1'.
+    model: Fitted logistic regression model.
+
+    Methods:
+    __init__(alpha=0, method='l1'):
+        Initializes the LogisticRegressionWithPvalues instance.
+
+        Parameters:
+        - alpha (float): Regularization parameter. Default is 0.
+        - method (str): Regularization method ('l1'). Default is 'l1'.
+
+    fit(X, y):
+        Fit the regularized logistic regression model.
+
+        Parameters:
+        - X (DataFrame): Input features for model fitting.
+        - y (array-like): Target variable for model fitting.
+
+        Raises:
+        - CustomException: If an exception occurs during fitting.
+
+    predict(X):
+        Predict probabilities using the fitted model.
+
+        Parameters:
+        - X (DataFrame): Input features for prediction.
+
+        Returns:
+        - predicted_probabilities: Predicted probabilities.
+
+        Raises:
+        - CustomException: If an exception occurs during prediction.
+
+    get_result_table():
+        Get a summary table with beta coefficients, p-values, and Wald statistics.
+
+        Returns:
+        - result: Summary table with Beta Coefficient, P-Value, and Wald Statistic.
+
+        Raises:
+        - CustomException: If an exception occurs during result table creation.
+    '''
+    def __init__(self, alpha=0, method='l1'):
+        self.alpha = alpha
+        self.method = method
+        self.model = None
+
+    def fit(self, X, y):
+        try:
+            # Add a constant to the data, which will be the intercept, and reshape y.
+            X_copy = X.copy()
+            X_copy = sm.add_constant(X_copy)
+            y_reshaped = y.values.reshape(-1,1)
+
+            # Fit the regularized logistic regression model.
+            self.model = sm.Logit(y_reshaped, X_copy).fit_regularized(alpha=self.alpha, method=self.method)
+        
+        except Exception as e:
+            raise CustomException(e, sys)
+
+    def predict(self, X):
+        try:
+            # Add a constant to the data, which will multiply the intercept.
+            X_copy = X.copy()
+            X_copy = sm.add_constant(X_copy)
+            
+            # Predicting probabilities.
+            predicted_probabilities = self.model.predict(X_copy)
+            
+            return predicted_probabilities
+        
+        except Exception as e:
+            raise CustomException(e, sys)
+    
+    def get_result_table(self):
+        try:
+            # Collect beta coefficients, p-values and Wald statistics in a summary table.
+            summary = self.model.summary2().tables[1]
+            summary['Wald'] = summary['z'] ** 2
+            result = summary[['Coef.', 'P>|z|', 'Wald']]
+            result.columns = ['Beta Coefficient', 'P-Value', 'Wald Statistic']
+            result = result.sort_index()   
+            return result
+        
+        except Exception as e:
+            raise CustomException(e, sys)
+        
 
 class DiscretizerCombiner(BaseEstimator, TransformerMixin):
     '''
