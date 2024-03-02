@@ -16,6 +16,7 @@ import matplotlib.pyplot as plt
 # Modeling.
 from sklearn.base import BaseEstimator, TransformerMixin
 from sklearn.preprocessing import OneHotEncoder
+from sklearn.metrics import roc_auc_score, roc_curve, brier_score_loss
 import statsmodels.api as sm
 
 # Debugging.
@@ -119,6 +120,311 @@ class LogisticRegressionWithPvalues:
         
         except Exception as e:
             raise CustomException(e, sys)
+        
+
+def evaluate_credit_scoring_model(y_train, y_test, train_probas, test_probas, plot=False): 
+    '''
+    Evaluate the performance of a credit scoring model using AUC, Gini, KS and Brier metrics on both training and test sets.
+
+    Parameters:
+    - y_train (pd.Series): Actual target values for the training set. 1 for non-default and 0 for default.
+    - y_test (pd.Series): Actual target values for the test set. 1 for non-default and 0 for default
+    - train_probas (np.ndarray): Predicted probabilities of being good for the training set.
+    - test_probas (np.ndarray): Predicted probabilities of being good for the test set.
+    - plot (bool, optional): Whether to plot the ROC curve. Default is False.
+
+    Returns:
+    - pd.DataFrame: A DataFrame containing evaluation metrics for both the training and test sets.
+
+    Raises:
+    - CustomException: An exception is raised if an error occurs during the evaluation process.
+    
+    Example:
+    ```python
+    model_metrics = evaluate_credit_scoring_model(y_train, y_test, train_probas, test_probas, plot=True)
+    print(model_metrics)
+    ```
+    '''
+    try:  
+        # Obtain roc curve and auc score on test set.
+        fpr, tpr, thresholds = roc_curve(y_test, test_probas)
+        roc_auc_test = roc_auc_score(y_test, test_probas)
+        
+        # Obtain gini index on test set.
+        gini_test = 2 * roc_auc_test - 1
+        
+        if plot:
+        # Plot roc curve for test.
+            fig, ax = plt.subplots(figsize=(7, 4))
+            ax.plot(fpr, tpr, label=f'TEST ROC AUC = {roc_auc_test:.2f}', color='#461220')
+            ax.plot([0, 1], [0, 1], linestyle='--', color='#8a817c')  # Random guessing line.
+            ax.set_xlabel('False Positive Rate', fontsize=10.8, labelpad=20)
+            ax.set_ylabel('True Positive Rate', fontsize=10.8, labelpad=20)
+            ax.set_xticks(ticks=[0, 0.2, 0.4, 0.6, 0.8, 1.0], labels=['0.0', '0.2', '0.4', '0.6', '0.8', '1.0'])
+            ax.set_yticks(ticks=[0, 0.2, 0.4, 0.6, 0.8, 1.0], labels=['0.0', '0.2', '0.4', '0.6', '0.8', '1.0'])
+            ax.set_title('Receiver Operating Characteristic (ROC) Curve', fontweight='bold', fontsize=12, pad=20)
+            ax.spines['top'].set_visible(False)
+            ax.spines['right'].set_visible(False)
+            ax.spines['left'].set_color('#8a817c')
+            ax.spines['bottom'].set_color('#8a817c')
+            ax.grid(False)
+            ax.legend()
+        
+        # Obtain KS on test set.
+        test_scores = pd.DataFrame()
+        test_scores['actual'] = y_test.reset_index(drop=True)
+        test_scores['probability_of_default'] = 1 - test_probas
+        sorted_test_scores = test_scores.sort_values(by=['probability_of_default'], ascending=False)
+        sorted_test_scores['cum_bad'] = (1 - sorted_test_scores['actual']).cumsum() / (1 - sorted_test_scores['actual']).sum()
+        sorted_test_scores['cum_good'] = sorted_test_scores['actual'].cumsum() / sorted_test_scores['actual'].sum()
+        sorted_test_scores['ks'] = np.abs(sorted_test_scores['cum_good'] - sorted_test_scores['cum_bad'])
+        ks_statistic_test = sorted_test_scores['ks'].max()
+        
+        # Obtain Brier Score on test set.
+        brier_score_test = brier_score_loss(y_test, test_probas)
+        
+        # Obtain roc-auc score, gini index, ks statistic and brier score on train set.
+        roc_auc_train = roc_auc_score(y_train, train_probas)
+        gini_train = 2 * roc_auc_train - 1
+        brier_score_train = brier_score_loss(y_train, train_probas)
+        
+        train_scores = pd.DataFrame()
+        train_scores['actual'] = y_train.reset_index(drop=True)
+        train_scores['probability_of_default'] = 1 - train_probas
+        sorted_train_scores = train_scores.sort_values(by=['probability_of_default'], ascending=False)
+        sorted_train_scores['cum_bad'] = (1 - sorted_train_scores['actual']).cumsum() / (1 - sorted_train_scores['actual']).sum()
+        sorted_train_scores['cum_good'] = sorted_train_scores['actual'].cumsum() / sorted_train_scores['actual'].sum()
+        sorted_train_scores['ks'] = np.abs(sorted_train_scores['cum_good'] - sorted_train_scores['cum_bad'])
+        ks_statistic_train = sorted_train_scores['ks'].max()
+        
+        # Construct a DataFrame with metrics for train and test.
+        model_metrics = pd.DataFrame({
+                                    'Metric': ['KS', 'AUC', 'Gini', 'Brier'],
+                                    'Train Value': [ks_statistic_train, roc_auc_train, gini_train, brier_score_train],
+                                    'Test Value': [ks_statistic_test, roc_auc_test, gini_test, brier_score_test],
+                                    })
+        
+        return model_metrics
+    
+    except Exception as e:
+        raise CustomException(e, sys)
+    
+
+def deciles_scores_analysis(y_train, y_test, train_probas, test_probas):
+    '''
+    Analyzes and plots the bad rate and cumulative bad rate per decile obtained from the predicted probabilities of the credit scoring model.
+
+    Parameters:
+    - y_train (pd.Series): Actual values for the training set. 1 is non-default, 0 is default.
+    - y_test (pd.Series): Actual values for the test set. 1 is non-default, 0 is default.
+    - train_probas (numpy.ndarray): Predicted probabilities of being good for the training set.
+    - test_probas (numpy.ndarray): Predicted probabilities of being good for the test set.
+
+    Returns:
+    - train_score_table (pd.DataFrame): Table with bad rate, volume, and cumulative bad rate per decile for the training set.
+    - test_score_table (pd.DataFrame): Table with bad rate, volume, and cumulative bad rate per decile for the test set.
+    
+    Raises:
+    - CustomException: If any unexpected error occurs during the execution.
+    '''
+    try:
+        # Add some noise to the predicted probabilities and round them to avoid duplicate problems in bin limits.
+        noise = np.random.uniform(0, 0.0001, size=train_probas.shape)
+        train_probas += noise
+        train_probas = round(train_probas, 10)
+        
+        # Create a DataFrame with the predicted probabilities of being good and actual values for train.
+        train_df = pd.DataFrame({'probability': train_probas, 'actual': y_train.reset_index(drop=True)})
+        
+        # Sort the train_df by probabilities.
+        train_df = train_df.sort_values(by='probability', ascending=True)
+        
+        # Calculate the deciles.
+        train_df['decile'] = pd.qcut(train_df['probability'], q=10, labels=False, duplicates='drop')
+        
+        # Calculate the bad rate per decile.
+        train_decile_df = train_df.groupby(['decile'])['actual'].mean().reset_index()
+        train_decile_df['bad_rate'] = 1 - train_decile_df['actual']
+        
+        # Add some noise to the predicted probabilities and round them to avoid duplicate problems in bin limits.
+        noise = np.random.uniform(0, 0.0001, size=test_probas.shape)
+        test_probas += noise
+        test_probas = round(test_probas, 10)
+        
+        # Create a DataFrame with the predicted probabilities of being good and actual values for test.
+        test_df = pd.DataFrame({'probability': test_probas, 'actual': y_test.reset_index(drop=True)})
+        
+        # Sort the test_df by probabilities.
+        test_df = test_df.sort_values(by='probability', ascending=True)
+        
+        # Calculate the deciles.
+        test_df['decile'] = pd.qcut(test_df['probability'], q=10, labels=False, duplicates='drop')
+        
+        # Calculate the bad rate per decile.
+        test_decile_df = test_df.groupby(['decile'])['actual'].mean().reset_index()
+        test_decile_df['bad_rate'] = 1 - test_decile_df['actual']
+        
+        # Obtain a table with bad rate, volume and cumulative bad rate per decile for train.
+        train_df['bad_probability'] = 1 - train_df['probability']
+        train_scores_table = train_df.groupby('decile').agg(
+            min_score=pd.NamedAgg(column='bad_probability', aggfunc='min'),
+            max_score=pd.NamedAgg(column='bad_probability', aggfunc='max'),
+            bad_rate=pd.NamedAgg(column='actual', aggfunc='mean'),
+            volume=pd.NamedAgg(column='actual', aggfunc='size')
+        ).reset_index()
+        train_scores_table['bad_rate'] = 1 - train_scores_table['bad_rate']
+        train_scores_table['cum_bad_rate'] = train_scores_table['bad_rate'].cumsum() / train_scores_table['bad_rate'].sum()
+        
+        # Obtain a table with bad rate, volume and cumulative bad rate per decile for train.
+        test_df['bad_probability'] = 1 - test_df['probability']
+        test_scores_table = test_df.groupby('decile').agg(
+            min_score=pd.NamedAgg(column='bad_probability', aggfunc='min'),
+            max_score=pd.NamedAgg(column='bad_probability', aggfunc='max'),
+            bad_rate=pd.NamedAgg(column='actual', aggfunc='mean'),
+            volume=pd.NamedAgg(column='actual', aggfunc='size')
+        ).reset_index()
+        test_scores_table['bad_rate'] = 1 - test_scores_table['bad_rate']
+        test_scores_table['cum_bad_rate'] = test_scores_table['bad_rate'].cumsum() / test_scores_table['bad_rate'].sum()
+    
+        # Plot scores ordering and cumulative bad rate per decile for training and test sets.
+
+        fig, ax = plt.subplots(figsize=(20, 4))
+
+        # Ordering per decile.
+        bar_width = 0.35  
+        r1 = np.arange(len(train_decile_df))
+        r2 = [x + bar_width + 0.015 for x in r1]
+
+        ax.bar(r1, train_decile_df['bad_rate'], color='#8a817c', width=bar_width, label='Train')
+        ax.bar(r2, test_decile_df['bad_rate'], color='#461220', width=bar_width, label='Test')
+        ax.set_title('Ordering per Decile', fontweight='bold', fontsize=12)
+        ax.set_xticks([r + bar_width/2 for r in range(len(train_decile_df))], [1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
+        ax.set_xlabel('Decile', labelpad=10)
+        ax.set_ylabel('Bad Rate')
+        ax.set_yticks([])
+        ax.legend()
+        ax.grid(False)
+        
+        # Annotate bad_rate on top of the bars for training set.
+        for i, value in enumerate(train_decile_df['bad_rate']):
+           ax.text(r1[i], value + 0.001, f'{value:.2%}', ha='center', va='bottom', color='#8a817c')
+
+        # Annotate bad_rate on top of the bars for test set.
+        for i, value in enumerate(test_decile_df['bad_rate']):
+           ax.text(r2[i], value + 0.001, f'{value:.2%}', ha='center', va='bottom', color='#461220')
+        
+        # Cumulative Bad Rate per decile.
+        fig, ax = plt.subplots(figsize=(20, 6))
+
+        r1 = np.arange(len(train_scores_table))
+        r2 = [x + bar_width + 0.02 for x in r1]
+
+        ax.bar(r1, train_scores_table['cum_bad_rate'], color='#8a817c', width=bar_width, label='Train')
+        ax.bar(r2, test_scores_table['cum_bad_rate'], color='#461220', width=bar_width, label='Test')
+        ax.set_title('Cumulative Bad Rate per Decile', fontweight='bold', fontsize=12, pad=20)
+        ax.set_xticks([r + bar_width/2 for r in range(len(train_scores_table))], [1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
+        ax.set_xlabel('Decile', labelpad=10)
+        ax.set_ylabel('Cumulative Bad Rate')
+        ax.set_yticks([])
+        ax.legend(loc='upper right', bbox_to_anchor=(1, 1.1))
+        ax.grid(False)
+
+        # Annotate cum_bad_rate on top of the bars for training set.
+        for i, value in enumerate(train_scores_table['cum_bad_rate']):
+            ax.text(r1[i], value + 0.001, f'{value:.2%}', ha='center', va='bottom', color='#8a817c')
+
+        # Annotate cum_bad_rate on top of the bars for test set.
+        for i, value in enumerate(test_scores_table['cum_bad_rate']):
+            ax.text(r2[i], value + 0.001, f'{value:.2%}', ha='center', va='bottom', color='#461220')
+    
+        # Adjust layout to prevent clipping of titles and labels.
+        plt.tight_layout()
+
+        # Show the plot.
+        plt.show()
+
+        return train_scores_table, test_scores_table
+    except Exception as e:
+        raise CustomException(e, sys)
+    
+
+def probability_scores_ordering(y_train, y_test, train_probas, test_probas):
+    '''
+    Order and visualize the probability scores in deciles for both training and test sets.
+
+    Parameters:
+    - y_train (pd.Series): Actual target values for the training set. 1 is non-default and 0 is default.
+    - y_test (pd.Series): Actual target values for the test set. 1 is non-default and 0 is default.
+    - train_probas (np.ndarray): Predicted probabilities of being good for the training set.
+    - test_probas (np.ndarray): Predicted probabilities of being good for the test set.
+
+    Returns:
+    - None: Plots the probability scores ordering for both training and test sets.
+
+    Raises:
+    - CustomException: An exception is raised if an error occurs during the execution.
+    
+    Example:
+    ```python
+    probability_scores_ordering(y_train, y_test, train_probas, test_probas)
+    ```
+    '''
+    try:
+        # Add some noise to the predicted probabilities and round them to avoid duplicate problems in bin limits.
+        noise = np.random.uniform(0, 0.0001, size=train_probas.shape)
+        train_probas += noise
+        train_probas = round(train_probas, 10)
+        
+        # Create a DataFrame with the predicted probabilities of being good and actual values for train.
+        train_df = pd.DataFrame({'probabilities': train_probas, 'actual': y_train.reset_index(drop=True)})
+        
+        # Sort the train_df by probabilities.
+        train_df = train_df.sort_values(by='probabilities', ascending=True)
+        
+        # Calculate the deciles.
+        train_df['deciles'] = pd.qcut(train_df['probabilities'], q=10, labels=False, duplicates='drop')
+        
+        # Calculate the bad rate per decile.
+        train_decile_df = train_df.groupby(['deciles'])['actual'].mean().reset_index()
+        train_decile_df['bad_rate'] = 1 - train_decile_df['actual']
+        
+        # Add some noise to the predicted probabilities and round them to avoid duplicate problems in bin limits.
+        noise = np.random.uniform(0, 0.0001, size=test_probas.shape)
+        test_probas += noise
+        test_probas = round(test_probas, 10)
+        
+        # Create a DataFrame with the predicted probabilities of being good and actual values for test.
+        test_df = pd.DataFrame({'probabilities': test_probas, 'actual': y_test.reset_index(drop=True)})
+        
+        # Sort the test_df by probabilities.
+        test_df = test_df.sort_values(by='probabilities', ascending=True)
+        
+        # Calculate the deciles.
+        test_df['deciles'] = pd.qcut(test_df['probabilities'], q=10, labels=False, duplicates='drop')
+        
+        # Calculate the bad rate per decile.
+        test_decile_df = test_df.groupby(['deciles'])['actual'].mean().reset_index()
+        test_decile_df['bad_rate'] = 1 - test_decile_df['actual']
+        
+        # Plot probability scores ordering for train and test sets.
+        # Plot bar graph of deciles vs event rate.
+        fig, ax = plt.subplots(1, 2, figsize=(20, 4))
+        ax[0].bar(train_decile_df['deciles'], train_decile_df['bad_rate'], color='#8a817c')
+        ax[0].set_title('Probability Scores Ordering - Train')
+        ax[0].set_xticks(range(10), [1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
+        ax[0].set_xlabel('Score Bins', labelpad=15)
+        ax[0].set_ylabel('Bad Rate', labelpad=15)
+        ax[0].grid(False)
+        
+        ax[1].bar(test_decile_df['deciles'], test_decile_df['bad_rate'], color='#461220')
+        ax[1].set_title('The probability scores follow an order - Test')
+        ax[1].set_xticks(range(10), [1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
+        ax[1].set_xlabel('Score Bins', labelpad=15)
+        ax[1].set_ylabel('Bad Rate', labelpad=15)
+        ax[1].grid(False)
+    
+    except Exception as e:
+        raise CustomException(e, sys)
         
 
 class DiscretizerCombiner(BaseEstimator, TransformerMixin):
