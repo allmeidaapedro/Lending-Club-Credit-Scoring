@@ -425,6 +425,123 @@ def probability_scores_ordering(y_train, y_test, train_probas, test_probas):
     
     except Exception as e:
         raise CustomException(e, sys)
+    
+
+def create_scorecard(referece_categories, summary_table):
+    '''
+    Creates a credit scorecard based on a summary table containing the independent variables, their dummies and corresponding coefficients, p-values and Wald statistics.
+
+    Parameters:
+    - referece_categories (dict): A dictionary containing reference categories for independent variables.
+    - summary_table (pd.DataFrame): A summary table with information about dummy variables, their coefficients, p-values and Wald statistics.
+
+    Returns:
+    - pd.DataFrame: The scorecard containing integer and easily interpretable scores for each dummy variable.
+    - float: The minimum possible score (default is 300).
+    - float: The maximum possible score (default is 850).
+
+    Raises:
+    - CustomException: An exception indicating an error during the scorecard creation process.
+    '''
+
+    try:
+        # Obtain a scorecard df for reference categories, each with 0 coefficient.
+        referece_categories_scorecard = {key: key+'_'+value for key, value in referece_categories.items()}
+        scorecard_reference_categories = pd.DataFrame()
+        scorecard_reference_categories['Dummy'] = list(referece_categories_scorecard.values())
+        scorecard_reference_categories['Beta Coefficient'] = 0
+        scorecard_reference_categories['P-Value'] = 'reference category'
+        scorecard_reference_categories['Wald Statistic'] = 'reference category'
+        scorecard_reference_categories = scorecard_reference_categories.reset_index(drop=True)
+        scorecard_reference_categories.index += 87
+        
+        # Concatenate the reference categories scorecard with the summary table.
+        summary_table_scorecard = summary_table.reset_index().rename(columns={'index': 'Dummy'})
+        scorecard = pd.concat([summary_table_scorecard, scorecard_reference_categories])
+        scorecard = scorecard.sort_values(by=['Dummy']).reset_index(drop=True)
+        
+        # Define minimum and maximum desired scores.
+        min_score = 300
+        max_score = 850
+        
+        # Obtain the independent variable for each dummy.
+        scorecard['Independent Variable'] = scorecard['Dummy'].str.split('_').apply(lambda x: ''.join(x[0]))
+        
+        # Obtain the minimum and maximum scoring formula values, calculating scores for each dummy.
+        min_sum_coef = scorecard.groupby(['Independent Variable'])['Beta Coefficient'].min().sum()
+        max_sum_coef = scorecard.groupby(['Independent Variable'])['Beta Coefficient'].max().sum()
+        scorecard['Score'] = scorecard['Beta Coefficient'] * (max_score - min_score) / (max_sum_coef - min_sum_coef)
+        
+        # Calculate the intercept score.
+        intercept = scorecard.loc[scorecard['Dummy'] == 'const', 'Beta Coefficient'].values[0]
+        scorecard.loc[scorecard['Dummy'] == 'const', 'Score'] = ((intercept - min_sum_coef) / (max_sum_coef - min_sum_coef))  * (max_score - min_score) + min_score
+        
+        # Round and obtain the minimum and maximum possible score.
+        scorecard['Score'] = scorecard['Score'].round()
+        min_possible_score = scorecard.groupby(['Independent Variable'])['Score'].min().sum()
+        max_possible_score = scorecard.groupby(['Independent Variable'])['Score'].max().sum()
+        
+        # Drop independent variable auxiliar column.
+        scorecard = scorecard.drop(columns=['Independent Variable'])
+        
+        return scorecard, min_possible_score, max_possible_score
+    
+    except Exception as e:
+        raise CustomException(e, sys)
+    
+
+def compute_scores(X, y, probas, scorecard):
+    '''
+    Compute scores based on the provided input features, actual labels, probabilities, and a scorecard.
+
+    Parameters:
+    - X: pandas DataFrame
+    Input features, including dummy variables.
+
+    - y: pandas Series
+    Actual labels (target variable), 1 is non-default, 0 is default.
+
+    - probas: array-like
+    Probabilities of being good.
+
+    - scorecard: pandas DataFrame
+    Scorecard containing information about dummies, their scores, and intercept.
+
+    Returns:
+    - pandas DataFrame
+    DataFrame containing actual labels, probabilities of being good, and calculated scores.
+
+    Raises:
+    - CustomException: If any error occurs during the computation.
+
+    The function computes scores by selecting relevant dummies from the input features based on the scorecard.
+    It performs element-wise multiplication and sums along the rows, adding the intercept score.
+    The resulting scores are then combined with actual labels and probabilities in a DataFrame.
+    '''
+    try:
+        # Select only dummies and put X in the same order as the scorecard dummies.
+        scorecard_dummies = scorecard.loc[~(scorecard['Dummy'] == 'const') & ~(scorecard['P-Value'] == 'reference category')]
+        X_dummies = X[scorecard_dummies['Dummy'].values]
+        
+        # Set 'Dummy' as the index in scorecard for faster lookups.
+        scorecard_dummies = scorecard_dummies.set_index('Dummy')
+        
+        # Perform element-wise multiplication and sum along the rows.
+        intercept_score = scorecard.loc[scorecard['Dummy'] == 'const', 'Score'].values[0]
+        scores = intercept_score + X_dummies.mul(scorecard_dummies['Score']).sum(axis=1)
+        
+        # Construct a dataframe with actual values, probabilities of being good, and calculated scores.
+        scores_df = pd.DataFrame({
+            'Actual': y.reset_index(drop=True),
+            'Probability of Being Good': probas,
+            'Score': scores 
+        })
+    
+        return scores_df
+    
+    
+    except Exception as e:
+        raise CustomException(e, sys)
         
 
 class DiscretizerCombiner(BaseEstimator, TransformerMixin):
