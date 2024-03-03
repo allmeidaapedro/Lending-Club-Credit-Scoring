@@ -16,7 +16,7 @@ import matplotlib.pyplot as plt
 # Modeling.
 from sklearn.base import BaseEstimator, TransformerMixin
 from sklearn.preprocessing import OneHotEncoder
-from sklearn.metrics import roc_auc_score, roc_curve, brier_score_loss
+from sklearn.metrics import roc_auc_score, roc_curve, brier_score_loss, r2_score, mean_absolute_error, mean_squared_error, mean_absolute_percentage_error
 import statsmodels.api as sm
 
 # Debugging.
@@ -544,6 +544,75 @@ def compute_scores(X, y, probas, scorecard):
         return scores_df
     
     
+    except Exception as e:
+        raise CustomException(e, sys)
+    
+
+def compare_actual_predicted_regression(y_true, y_pred):
+    '''
+    Compares actual and predicted values and calculates the residuals for a regression model.
+
+    Args:
+    y_true : The true target values.
+    y_pred : The predicted target values.
+
+    Returns:
+    pandas.DataFrame: A dataframe containing the actual, predicted, and residual values.
+
+    Raises:
+    CustomException: An error occurred during the comparison process.
+    '''
+    try:
+        actual_pred_df = pd.DataFrame({'Actual': np.round(y_true, 2),
+                                    'Predicted': np.round(y_pred, 2), 
+                                    'Residual': np.round(np.abs(y_pred - y_true), 2)})
+        return actual_pred_df
+    except Exception as e:
+        raise CustomException(e, sys)
+    
+
+def evaluate_regressor(y_true, y_pred, y_train, model_name):
+    '''
+    Evaluates a regression model based on various metrics and plots.
+
+    Args:
+    y_true : The true target values.
+    y_pred : The predicted target values.
+    y_train : The actual target values from the training set.
+    model_name (str): The name of the regression model.
+
+    Returns:
+    pandas.DataFrame: A dataframe containing the evaluation metrics.
+
+    Raises:
+    CustomException: An error occurred during the evaluation process.
+    '''
+    try:
+        mae = round(mean_absolute_error(y_true, y_pred), 4)
+        mse = round(mean_squared_error(y_true, y_pred), 4)
+        rmse = round(np.sqrt(mse), 4)
+        mape = round(100 * mean_absolute_percentage_error(y_true, y_pred), 4)
+        
+        # Metrics
+        print(f'Mean Absolute Error (MAE): {mae}')
+        print(f'Mean Absolute Percentage Error (MAPE): {mape}')
+        print(f'Mean Squared Error (MSE): {mse}')
+        print(f'Root Mean Squared Error (RMSE): {rmse}')
+
+        # Obtaining a dataframe of the metrics.
+        df_results = pd.DataFrame({'Model': model_name, 'MAE': mae, 'MAPE': mape, 'RMSE': rmse}, index=['Results'])
+
+        # Residual Plots
+        
+        # Distribution of the residuals
+        plt.figure(figsize=(5, 3))
+        sns.distplot((y_true - y_pred))
+        plt.title('Residuals Distribution')
+        plt.grid(False)
+        plt.show()
+
+        return df_results
+
     except Exception as e:
         raise CustomException(e, sys)
         
