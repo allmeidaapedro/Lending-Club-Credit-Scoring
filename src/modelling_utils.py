@@ -537,7 +537,7 @@ def compute_scores(X, y, probas, scorecard):
         # Construct a dataframe with actual values, probabilities of being good, and calculated scores.
         scores_df = pd.DataFrame({
             'Actual': y.reset_index(drop=True),
-            'Probability of Default': 1 - probas,
+            'Probability of Default (PD)': 1 - probas,
             'Score': scores 
         })
     
