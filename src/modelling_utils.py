@@ -32,6 +32,183 @@ from warnings import filterwarnings
 filterwarnings('ignore')
 
 
+def compute_credit_policy(data, pd_data, ead_data, lgd_data, loan_fee, basic_us_int_rate):
+    '''
+    Computes credit policy metrics based on Loans, PD, EAD and LGD input data.
+
+    Args:
+    - data (pd.DataFrame): The main DataFrame containing loan-related information.
+    - pd_data (pd.Series): Probability of Default (PD) data.
+    - ead_data (pd.Series): Exposure at Default (EAD) data.
+    - lgd_data (pd.Series): Loss Given Default (LGD) data.
+    - loan_fee (float): Fee associated with the loan.
+    - basic_us_int_rate (float): Basic interest rate in the US. It must be in percentage, like 5 ~ 5%.
+
+    Returns:
+    pd.DataFrame: A DataFrame containing computed credit policy metrics.
+
+    Raises:
+    CustomException: An exception class indicating any error during the computation.
+    
+    Note:
+    - The function calculates Expected Loss (EL), Return on Investment (ROI),
+      Annualized ROI, and Approval status based on the specified criteria: If 
+      the Annualized ROI exceeds the basic interest rate in the US, the loan
+      is approved, else denied.
+    - The input DataFrames and Series should be appropriately formatted for accurate computation.
+
+    Example:
+    ```python
+    data = pd.DataFrame({...})  # Input DataFrame with loan details
+    pd_data = pd.Series({...})   # Probability of Default (PD) data
+    ead_data = pd.Series({...})  # Exposure at Default (EAD) data
+    lgd_data = pd.Series({...})  # Loss Given Default (LGD) data
+    loan_fee = 0.02              # Loan fee rate
+    basic_us_int_rate = 5        # Basic interest rate in the US (5%, for example.)
+
+    result_df = compute_credit_policy(data, pd_data, ead_data, lgd_data, loan_fee, basic_us_int_rate)
+    ```
+    '''
+    try:
+        policy_cols = ['term', 'int_rate', 'loan_amnt']
+        credit_policy_df = data[policy_cols].reset_index(drop=True)
+        credit_policy_df = pd.concat([credit_policy_df, pd_data], axis=1)
+        
+        credit_policy_df['Exposure at Default (EAD)'] = ead_data
+        credit_policy_df['Loss Given Default (LGD)'] = lgd_data
+        credit_policy_df['Expected Loss (EL)'] = credit_policy_df['Probability of Default (PD)'] * \
+                                                credit_policy_df['Exposure at Default (EAD)'] * \
+                                                credit_policy_df['Loss Given Default (LGD)']
+        
+        gains = credit_policy_df['int_rate'] * credit_policy_df['loan_amnt']
+        losses = credit_policy_df['Expected Loss (EL)']
+        costs = loan_fee * credit_policy_df['loan_amnt']
+        investment = credit_policy_df['loan_amnt']
+        term_years = credit_policy_df['term'] / 12
+        
+        credit_policy_df['ROI (%)'] = ((gains - losses - costs) / investment)
+        credit_policy_df['Annualized ROI (%)'] = round(credit_policy_df['ROI (%)'] / term_years, 3)
+        credit_policy_df['Approved'] = np.where(credit_policy_df['Annualized ROI (%)'] > basic_us_int_rate, 1, 0)
+
+        return credit_policy_df
+    
+    except Exception as e:
+        raise CustomException(e, sys)
+    
+
+def predict_ead_lgd(data, preprocessor, ead_model, lgd_logistic, lgd_linear):
+    '''
+    Predicts Exposure at Default (EAD) and Loss Given Default (LGD) for given loan data.
+
+    Args:
+    - data (pd.DataFrame): The DataFrame containing loan-related information.
+    - preprocessor (object): The preprocessor object for transforming input data.
+    - ead_model (object): The model for predicting Credit Conversion Factor (CCF) and EAD.
+    - lgd_logistic (object): The logistic regression model for predicting the 1st stage of LGD.
+    - lgd_linear (object): The linear regression model for predicting the 2nd stage of LGD.
+
+    Returns:
+    Tuple of pd.Series:
+    - pd.Series: Predicted recovery rate.
+    - pd.Series: Predicted CCF (Credit Conversion Factor).
+    - pd.Series: Predicted EAD (Exposure at Default).
+    - pd.Series: Predicted LGD (Loss Given Default).
+
+    Raises:
+    CustomException: An exception class indicating any error during the prediction.
+    
+    Note:
+    - The function preprocesses input data, combines categories, and imputes missing values.
+    - LGD is predicted in two stages using logistic and linear regression models.
+    - Recovery rate is calculated as the product of 1st and 2nd stage LGD predictions.
+    - LGD = 1 - Recovery Rate.
+    - EAD = Loan Amount * Credit Conversion Factor.
+    - Inconsistent predictions are fixed to ensure valid values between 0 and 1.
+
+    Example:
+    ```python
+    data = pd.DataFrame({...})          # Input DataFrame with loan details
+    preprocessor = Preprocessor({...})  # Preprocessor object for data transformation
+    ead_model = EADModel({...})          # Model for predicting Credit Conversion Factor and EAD
+    lgd_logistic = LogisticModel({...})  # Logistic regression model for LGD (1st stage)
+    lgd_linear = LinearModel({...})      # Linear regression model for LGD (2nd stage)
+
+    recovery_rate, ccf_pred, ead_pred, lgd_pred = predict_ead_lgd(data, preprocessor, ead_model, lgd_logistic, lgd_linear)
+    ```
+    '''
+    try:
+        # Preprocess the data.
+        # Combine categories to avoid overfitting.
+        predict_data = data.copy()
+        state_to_region = {
+            'ME': 'Northeast', 'NH': 'Northeast', 'VT': 'Northeast', 'MA': 'Northeast', 'RI': 'Northeast', 'CT': 'Northeast', 'NY': 'Northeast', 'NJ': 'Northeast', 'PA': 'Northeast',
+            'OH': 'Midwest', 'MI': 'Midwest', 'IN': 'Midwest', 'IL': 'Midwest', 'WI': 'Midwest', 'MN': 'Midwest', 'IA': 'Midwest', 'MO': 'Midwest', 'ND': 'Midwest', 'SD': 'Midwest', 'NE': 'Midwest', 'KS': 'Midwest',
+            'DE': 'South', 'MD': 'South', 'VA': 'South', 'WV': 'South', 'KY': 'South', 'NC': 'South', 'SC': 'South', 'TN': 'South', 'GA': 'South', 'FL': 'South', 'AL': 'South', 'MS': 'South', 'AR': 'South', 'LA': 'South', 'TX': 'South', 'OK': 'South',
+            'MT': 'West', 'ID': 'West', 'WY': 'West', 'CO': 'West', 'NM': 'West', 'AZ': 'West', 'UT': 'West', 'NV': 'West', 'WA': 'West', 'OR': 'West', 'CA': 'West', 'AK': 'West', 'HI': 'West', 'DC': 'Northeast',
+        }
+        # Create a new 'Region' column by mapping the state abbreviations to regions
+        predict_data['region'] = predict_data['addr_state'].replace(state_to_region)
+        predict_data['home_ownership'] = predict_data['home_ownership'].replace(['RENT', 'NONE', 'OTHER'], 'RENT_NONE_OTHER')
+        predict_data['purpose'] = predict_data['purpose'].replace(['educational', 'renewable_energy'], 'other')
+        predict_data['purpose'] = predict_data['purpose'].replace(['vacation', 'moving', 'wedding'], 'vacation_moving_wedding')
+        predict_data['purpose'] = predict_data['purpose'].replace(['house', 'car', 'medical'], 'house_car_medical')
+
+        # Impute mths_since_last_delinq missing values with -999, indicating never deliquent borrowers.
+        predict_data['mths_since_last_delinq'] = predict_data['mths_since_last_delinq'].fillna(-999)
+        
+        # Obtain predictor set for LGD and EAD models, removing irrelevant variables.
+        to_drop = ['funded_amnt', 'installment', 'revol_util', 
+                    'out_prncp', 'total_pymnt', 'total_rec_prncp', 'total_rec_int', 
+                    'total_rec_late_fee', 'recoveries', 'collection_recovery_fee', 
+                    'last_pymnt_amnt', 'collections_12_mths_ex_med', 'tot_coll_amt',
+                    'delinq_2yrs', 'acc_now_delinq', 'pub_rec', 'total_rev_hi_lim',
+                    'loan_status', 'default', 'addr_state', 'recovery_rate', 
+                    'credit_conversion_factor', 'issue_d']
+
+        predict_data = predict_data.drop(columns=to_drop)
+
+        # Preprocess all data for 1st and 2nd stages of LGD model and EAD model.
+        prepared_predict_data = preprocessor.transform(predict_data)
+
+        # Obtain features list.
+        features_list = ['_'.join(x.split('_')[3:]) for x in preprocessor.get_feature_names_out().tolist()]
+
+        # Create DataFrames for better understanding and manipulation of prepared data.
+        prepared_predict_data = pd.DataFrame(prepared_predict_data, columns=features_list)
+        
+        # Make predictions on the data. Obtain the EAD and LGD.
+
+        # Predict recovery rate.
+        prepared_predict_data_const = sm.add_constant(prepared_predict_data)
+        lgd_pred_1st = lgd_logistic.predict(prepared_predict_data_const)
+        lgd_pred_2nd = lgd_linear.predict(prepared_predict_data_const)
+        recovery_rate_pred = lgd_pred_1st * lgd_pred_2nd
+
+        # Fix inconsistent predictions that may occur.
+        recovery_rate_pred = np.where(recovery_rate_pred > 1, 1, recovery_rate_pred)
+        recovery_rate_pred = np.where(recovery_rate_pred < 0, 0, recovery_rate_pred)
+        recovery_rate_pred = pd.Series(recovery_rate_pred)
+
+        # Obtain  LGD = 1 - Recovery Rate.
+        lgd_pred = 1 - recovery_rate_pred
+        
+        # Predict credit conversion factor.
+        ccf_pred = ead_model.predict(prepared_predict_data_const)
+        
+        # Fix inconsistent predictions that may occur.
+        ccf_pred = np.where(ccf_pred > 1, 1, ccf_pred)
+        ccf_pred = np.where(ccf_pred < 0, 0, ccf_pred)
+        ccf_pred = pd.Series(ccf_pred)
+
+        # Obtain EAD = Funded Amount * Credit Conversion Factor.
+        ead_pred = data['loan_amnt'].reset_index(drop=True) * ccf_pred
+
+        return recovery_rate_pred, ccf_pred, ead_pred, lgd_pred
+    
+    except Exception as e:
+        raise CustomException(e, sys)
+    
+
 class LogisticRegressionWithPvalues:
     '''
     Custom logistic regression class with p-values for coefficient significance.
