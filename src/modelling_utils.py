@@ -90,6 +90,13 @@ def compute_credit_policy(data, pd_data, ead_data, lgd_data, loan_fee, basic_us_
         credit_policy_df['Annualized ROI (%)'] = round(credit_policy_df['ROI (%)'] / term_years, 3)
         credit_policy_df['Approved'] = np.where(credit_policy_df['Annualized ROI (%)'] > basic_us_int_rate, 1, 0)
 
+        credit_policy_df = credit_policy_df.rename(columns={
+                                                            'term': 'Term',
+                                                            'int_rate': 'Interest Rate',
+                                                            'loan_amnt': 'Loan Amount',
+                                                            'Score': 'Credit Score'
+                                                        })
+                                                        
         return credit_policy_df
     
     except Exception as e:
