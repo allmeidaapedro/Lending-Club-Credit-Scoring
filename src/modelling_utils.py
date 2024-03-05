@@ -32,9 +32,9 @@ from warnings import filterwarnings
 filterwarnings('ignore')
 
 
-def compute_credit_policy(data, pd_data, ead_data, lgd_data, loan_fee, basic_us_int_rate):
+def compute_credit_policy(data, pd_data, ead_data, lgd_data, loan_fee, auto_approve, auto_deny, basic_us_int_rate):
     '''
-    Computes credit policy metrics based on Loans, PD, EAD and LGD input data.
+    Computes a credit policy based on Loans, PD, EAD and LGD input data.
 
     Args:
     - data (pd.DataFrame): The main DataFrame containing loan-related information.
@@ -42,6 +42,8 @@ def compute_credit_policy(data, pd_data, ead_data, lgd_data, loan_fee, basic_us_
     - ead_data (pd.Series): Exposure at Default (EAD) data.
     - lgd_data (pd.Series): Loss Given Default (LGD) data.
     - loan_fee (float): Fee associated with the loan.
+    - auto_approve (list): A list of the risk classes to automatically approve the loans.
+    - auto_deny (list): A list of the risk classes to automatically deny the loans.
     - basic_us_int_rate (float): Basic interest rate in the US. It must be in percentage, like 5 ~ 5%.
 
     Returns:
@@ -52,9 +54,10 @@ def compute_credit_policy(data, pd_data, ead_data, lgd_data, loan_fee, basic_us_
     
     Note:
     - The function calculates Expected Loss (EL), Return on Investment (ROI),
-      Annualized ROI, and Approval status based on the specified criteria: If 
-      the Annualized ROI exceeds the basic interest rate in the US, the loan
-      is approved, else denied.
+      Annualized ROI, and Approval status based on the specified criteria: 
+      Automatically approves loans for applicants who fall into auto_approve risk classes
+      and automatically deny those who fall into the auto_deny classes. For the other classes
+      loans with an annualized ROI higher than the basic US interest rate will be approved.
     - The input DataFrames and Series should be appropriately formatted for accurate computation.
 
     Example:
@@ -70,32 +73,76 @@ def compute_credit_policy(data, pd_data, ead_data, lgd_data, loan_fee, basic_us_
     ```
     '''
     try:
+        # Select the relevant columns.
         policy_cols = ['term', 'int_rate', 'loan_amnt']
         credit_policy_df = data[policy_cols].reset_index(drop=True)
         credit_policy_df = pd.concat([credit_policy_df, pd_data], axis=1)
         
+        # Compute EL = PD * EAD * LGD.
         credit_policy_df['Exposure at Default (EAD)'] = ead_data
         credit_policy_df['Loss Given Default (LGD)'] = lgd_data
         credit_policy_df['Expected Loss (EL)'] = credit_policy_df['Probability of Default (PD)'] * \
                                                 credit_policy_df['Exposure at Default (EAD)'] * \
                                                 credit_policy_df['Loss Given Default (LGD)']
         
+        # Compute ROI formula components.
         gains = credit_policy_df['int_rate'] * credit_policy_df['loan_amnt']
         losses = credit_policy_df['Expected Loss (EL)']
         costs = loan_fee * credit_policy_df['loan_amnt']
         investment = credit_policy_df['loan_amnt']
         term_years = credit_policy_df['term'] / 12
         
+        # Compute annualized ROI.
         credit_policy_df['ROI (%)'] = ((gains - losses - costs) / investment)
         credit_policy_df['Annualized ROI (%)'] = round(credit_policy_df['ROI (%)'] / term_years, 3)
-        credit_policy_df['Approved'] = np.where(credit_policy_df['Annualized ROI (%)'] > basic_us_int_rate, 1, 0)
 
+        # Create risk classes based on the probability of default.
+        conditions = [
+            (credit_policy_df['Probability of Default (PD)'] >= 0) & (credit_policy_df['Probability of Default (PD)'] < 0.01),
+            (credit_policy_df['Probability of Default (PD)'] >= 0.01) & (credit_policy_df['Probability of Default (PD)'] < 0.025),
+            (credit_policy_df['Probability of Default (PD)'] >= 0.025) & (credit_policy_df['Probability of Default (PD)'] < 0.05),
+            (credit_policy_df['Probability of Default (PD)'] >= 0.05) & (credit_policy_df['Probability of Default (PD)'] < 0.1),
+            (credit_policy_df['Probability of Default (PD)'] >= 0.1) & (credit_policy_df['Probability of Default (PD)'] < 0.15),
+            (credit_policy_df['Probability of Default (PD)'] >= 0.15) & (credit_policy_df['Probability of Default (PD)'] < 0.2),
+            (credit_policy_df['Probability of Default (PD)'] >= 0.2) & (credit_policy_df['Probability of Default (PD)'] < 0.25),
+            (credit_policy_df['Probability of Default (PD)'] >= 0.25) & (credit_policy_df['Probability of Default (PD)'] <= 1)
+        ]
+
+        risk_classes = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H']
+
+        # Assign the risk class based on conditions.
+        credit_policy_df['Risk Class'] = np.select(conditions, risk_classes)
+
+        # Group by 'Risk Class' and find the min and max credit scores.
+        score_ranges = credit_policy_df.groupby('Risk Class')['Score'].agg(['min', 'max'])
+
+        # Create 'Score Range' column by mapping the risk class to the respective min and max credit scores.
+        credit_policy_df['Score Range'] = credit_policy_df['Risk Class'].map(
+            lambda x: f"{score_ranges.loc[x, 'min']}-{score_ranges.loc[x, 'max']}"
+        )
+
+        # Credit policy rules.
+        credit_policy_df['Approved'] = np.where((credit_policy_df['Risk Class'].isin(auto_approve) | \
+                                                (credit_policy_df['Annualized ROI (%)'] > basic_us_int_rate) & \
+                                                ~(credit_policy_df['Risk Class'].isin(auto_deny))), 1, 0)
+
+        # Rename some columns.
         credit_policy_df = credit_policy_df.rename(columns={
                                                             'term': 'Term',
                                                             'int_rate': 'Interest Rate',
                                                             'loan_amnt': 'Loan Amount',
                                                             'Score': 'Credit Score'
                                                         })
+        
+        # Put the credit policy df in better interpretable order.
+        credit_policy_df = credit_policy_df[['Term', 'Interest Rate', 'Loan Amount',
+                                             'Credit Score', 'Risk Class', 'Score Range',
+                                             'Probability of Default (PD)',
+                                             'Exposure at Default (EAD)',
+                                             'Loss Given Default (LGD)',
+                                             'Expected Loss (EL)',
+                                             'ROI (%)', 'Annualized ROI (%)',
+                                             'Approved']]
                                                         
         return credit_policy_df
     
