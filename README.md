@@ -1,6 +1,6 @@
 # Lending Club Credit Scoring
 
-<img src="reports/logoLC.jpeg" width="40%" height="40%">
+<img src="reports/logoLC.jpeg" height="40%">
 
 # 1. Project Description
 - In this project, I will build three **machine learning** models to predict the three components of expected loss in the context of **credit risk modeling** at the **Lending Club** (a peer-to-peer credit company): **Probability of Default (PD), Exposure at Default (EAD) and Loss Given Default (LGD)**. The expected loss will be the product of these elements: **Expected Loss (EL) = PD * EAD * LGD**. These models will be used to stablish a **credit policy**, deciding wheter to grant a loan or not for new applicants **(application model)** based on their **credit scores** and **expected losses** on loans. By estimating the Expected Loss (EL) from each loan, the Lending Club can also assess the required capital to hold to protect itself against defaults.
