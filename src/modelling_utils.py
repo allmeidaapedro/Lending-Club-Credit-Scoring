@@ -678,9 +678,9 @@ def create_scorecard(referece_categories, summary_table):
         raise CustomException(e, sys)
     
 
-def compute_scores(X, y, probas, scorecard):
+def compute_credit_scores(X, y, probas, scorecard):
     '''
-    Compute scores based on the provided input features, actual labels, probabilities, and a scorecard.
+    Compute credit scores based on the provided input features, actual labels, probabilities, and a scorecard.
 
     Parameters:
     - X: pandas DataFrame
@@ -702,7 +702,7 @@ def compute_scores(X, y, probas, scorecard):
     Raises:
     - CustomException: If any error occurs during the computation.
 
-    The function computes scores by selecting relevant dummies from the input features based on the scorecard.
+    The function computes credit scores by selecting relevant dummies from the input features based on the scorecard.
     It performs element-wise multiplication and sums along the rows, adding the intercept score.
     The resulting scores are then combined with actual labels and probabilities in a DataFrame.
     '''
@@ -727,6 +727,79 @@ def compute_scores(X, y, probas, scorecard):
     
         return scores_df
     
+    
+    except Exception as e:
+        raise CustomException(e, sys)
+    
+
+def compute_PSI(train_data, monitoring_data):
+    '''
+    Calculate the Population Stability Index (PSI) for each original variable based on the provided training and monitoring data.
+
+    Args:
+        train_data (pd.DataFrame): DataFrame containing dummy variables representing the training data.
+        monitoring_data (pd.DataFrame): DataFrame containing dummy variables representing the monitoring data.
+
+    Returns:
+        pd.DataFrame: DataFrame with the calculated PSI for each original variable.
+        pd.DataFrame: Dataframe with each original variable's dummy contribution to the PSI in both training and monitoring data.
+
+    Raises:
+        CustomException: If any error occurs during the computation.
+
+    Example:
+        >>> train_data = pd.DataFrame({'loan_amnt_14.3K-21.2K': [0, 1, 0], 'int_rate_10.0-12.0': [1, 0, 1]})
+        >>> monitoring_data = pd.DataFrame({'loan_amnt_14.3K-21.2K': [1, 0, 1], 'int_rate_10.0-12.0': [0, 1, 0]})
+        >>> psi_result, psi_dummies = compute_PSI(train_data, monitoring_data)
+    '''
+    try:
+        # Calculate PSI on training and monitoring data.
+        PSI_train = train_data.sum() / len(train_data)
+        PSI_monitoring = monitoring_data.sum() / len(monitoring_data)
+
+        # Concatenate them.
+        PSI_train_monitoring = pd.concat([PSI_train, PSI_monitoring], axis=1).rename(columns={0: 'Train Proportion', 1: 'Monitoring Proportion'})
+        PSI_train_monitoring = PSI_train_monitoring.reset_index().rename(columns={'index': 'Dummy'})
+
+        # Create independent variable column.
+        variable_mapping = {
+            'loan_amnt': 'loan_amnt',
+            'term': 'term',
+            'int_rate': 'int_rate',
+            'grade': 'grade',
+            'sub_grade': 'sub_grade',
+            'emp_length': 'emp_length',
+            'home_ownership': 'home_ownership',
+            'annual_inc': 'annual_inc',
+            'verification_status': 'verification_status',
+            'purpose': 'purpose',
+            'addr_state': 'addr_state',
+            'dti': 'dti',
+            'inq_last_6mths': 'inq_last_6mths',
+            'mths_since_last_delinq': 'mths_since_last_delinq',
+            'open_acc': 'open_acc',
+            'revol_bal': 'revol_bal',
+            'total_acc': 'total_acc',
+            'initial_list_status': 'initial_list_status',
+            'tot_cur_bal': 'tot_cur_bal',
+            'mths_since_earliest_cr_line': 'mths_since_earliest_cr_line',
+            'score': 'score'
+            }
+        PSI_train_monitoring['Original Variable'] = PSI_train_monitoring['Dummy'].apply(lambda x: next((v for k, v in variable_mapping.items() if k in x), x))
+
+        # Calculate each dummy contribution to the PSI.
+        PSI_train_monitoring['Dummy PSI'] = np.where((PSI_train_monitoring['Train Proportion'] == 0) | 
+                                                    (PSI_train_monitoring['Monitoring Proportion'] == 0), 0,
+                                                    (PSI_train_monitoring['Monitoring Proportion'] - PSI_train_monitoring['Train Proportion']) * \
+                                                    np.log(PSI_train_monitoring['Monitoring Proportion'] / PSI_train_monitoring['Train Proportion']))
+
+        # Sum the contributions by original feature.
+        calculated_PSI = PSI_train_monitoring.groupby(['Original Variable'])[['Dummy PSI']].sum().rename(columns={'Dummy PSI': 'Variable PSI'})
+        
+        # Sort the calculated PSI in descending order.
+        calculated_PSI = calculated_PSI.sort_values(by=['Variable PSI'], ascending=False)
+        
+        return calculated_PSI, PSI_train_monitoring
     
     except Exception as e:
         raise CustomException(e, sys)
