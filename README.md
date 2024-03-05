@@ -1,6 +1,6 @@
 # Lending Club Credit Scoring
 
-<img src="reports/logoLC.jpeg">
+<img src="reports/logoLC.jpeg" width="40%" height="40%">
 
 # 1. Project Description
 - In this project, I will build three **machine learning** models to predict the three components of expected loss in the context of **credit risk modeling** at the **Lending Club** (a peer-to-peer credit company): **Probability of Default (PD), Exposure at Default (EAD) and Loss Given Default (LGD)**. The expected loss will be the product of these elements: **Expected Loss (EL) = PD * EAD * LGD**. These models will be used to stablish a **credit policy**, deciding wheter to grant a loan or not for new applicants **(application model)** based on their **credit scores** and **expected losses** on loans. By estimating the Expected Loss (EL) from each loan, the Lending Club can also assess the required capital to hold to protect itself against defaults.
@@ -57,7 +57,9 @@
         - Over 15% live in California.
         - Everything pointed out above suggests a conservative profile among applicants: older individuals with financial and professional stability.
 
+
     <img src="reports/personal_indicators.png">
+
 
    -  **Financial Indicators:**
         - The maximum funded amount is $35,000, with 50% falling in the range of $8,000 to $20,000. The average is around $14,000.
@@ -67,16 +69,23 @@
         - Half have a credit limit ranging from $13,500 to $37,300. However, similar to annual income, this value can vary significantly, including individuals with extremely high credit limits.
         - Everything pointed out above suggests a conservative investment portfolio, with no high funded amounts or interest rates charged. 
 
+
     <img src="reports/financial_indicators.png">
-    
+
+
     - **Credit Risk Indicators:**
         - There is a monotonic decrease in default rate as the applicant's grade improves (from G to A). Higher grades correspond to lower credit risk, with the bad rate for G-grade being 6.4 times higher than that for A-grade.
         - The bad rate consistently increases as the interest rate rises, indicating that higher interest rates are associated with higher credit risk. Loans with more than 20% interest rate have a bad rate approximately 8 times higher than those with 5% to 7% interest rates.
         - The bad rate consistently decreases as annual income increases, reflecting that lower annual incomes are associated with higher credit risk. For instance, individuals with annual incomes from 1,748 dollars to 24,111 dollars have a bad rate about two times higher than those with annual incomes of 120,000 dollars or higher. The same pattern holds for the debt-to-income ratio.
     
+
     <img src="reports/credit_risk_grade.png">
+
 
     - There is an observed increasing trend in the number of loans granted over time.
     - Although Lending Club has a conservative portfolio, the default rate is very high, and motivates our project. It needs to manage risks effectively to maximize profit and maintain healthy business. 
     
+
     <img src="reports/increasing_trend.png">
+
+
