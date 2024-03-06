@@ -8,22 +8,22 @@
 - The LGD and EAD modelling encompasses a beta regression problem, that is, a regression task in which the dependent variables are beta distributed, the recovery rate and credit conversion factor, respectively.
 
 # 2. Business Problem and Objectives
-**What is the Lending Club?:**
+**2.1 What is the Lending Club?:**
 - LendingClub is a **peer-to-peer lending platform** that facilitates the borrowing and lending of money directly between individuals, without the need for traditional financial institutions such as banks. The platform operates as an online marketplace, connecting borrowers seeking personal loans with investors willing to fund those loans.
 
-**What is the business problem?**
+**2.2 What is the business problem?**
 - LendingClub faces a significant business challenge related to **managing default risks effectively** while **optimizing returns** for its investors. The platform facilitates peer-to-peer lending, connecting borrowers with investors, and relies on **accurate risk assessments to maintain a sustainable and profitable lending ecosystem.** Thus, the CEO wants us to provide insights about which factors are associated with credit risk in Lending Club's operations, and to construct models capable of predicting the probability of default for new applicants and possible losses on its loans in order to establish a credit policy, deciding when to grant a loan or not for an applicant. An important observation is that the CEO wants these models to be easy to understand. Since our company works on the internet, making customers happy and being clear is really important. So, we need to be able to explain why we decide to approve or deny a loan.
 
 - <img src="reports/default_rate.png">
 
-**Which are the project objectives and benefits?**
+**2.3 Which are the project objectives and benefits?**
 1. Identify the factors associated with **credit risk** in the form of business **insights.**
 2. Develop an accurate **Probability of Default (PD) Model**, constructing a scorecard. This will allow Lending Club to decide wheter to grant a loan or not to a new applicant (**application model**), based on **credit scores.**
 3. Develop **Exposure at Default (EAD) and Loss Given Default (LGD) Models**, to estimate the **Expected Loss** in loans. This will allow Lending Club to **hold** sufficient **capital** to protect itself against default in each loan.
 4. Improve **risk management** and optimize **returns** by establishing a **credit policy**, trying to balance risk and **ROI** of Lending Club's assets.
 5. Apply **model monitoring** and maintenance techniques to safeguard our results from population instability, characterized by significant changes in loan applicants' characteristics. This will allow us to understand whether the built model is still useful in the future or whether the loan applicants characteristics changed significantly, such that we will need to redevelop it.
 
-**Which are the important concepts to know in the context of credit risk?**
+**2.4 Which are the important concepts to know in the context of credit risk?**
 - **Financial institutions**, like LendingClub and online lending platforms, **make money by lending to people and businesses.** When they lend money, they **charge interest**, which is a significant source of their **profits**. **Managing credit risk well is crucial** for these institutions. This means ensuring that borrowers pay back their loans on time to avoid losses.
 - **Credit risk** is the possibility that a borrower might not fulfill their financial obligations, leading to a loss for the lender. If a borrower fails to meet the agreed-upon terms, it's called a "default," and it can result in financial losses for the lender. The **default** definition is associated with a time horizon. For example, if a borrower hasn't paid their debt within 90 days of the due date, they are considered in default.
 - In the credit market, important **rules** help keep things honest and clear. **Basel III** is one such set of rules, making sure banks have **enough money (capital requirements)** and follow **guidelines for assessing loan risks**. The **Internal Rating-Based Approach (IRB-A)** lets banks figure out credit risks using concepts like Probability of Default (PD), Exposure at Default (EAD), and Loss Given Default (LGD). Another rule, **International Financial Reporting Standard 9 (IFRS 9)**, gives standards for measuring financial assets. It's special because it looks at the chance of a loan not being paid back over its entire life, unlike Basel, which checks it for one year. These rules help banks have enough money, handle risks well, and keep the credit market steady and trustworthy.
@@ -59,7 +59,7 @@ The **solution pipeline** is based on the **crisp-dm** framework:
 # 6. Main Business Credit Risk Insights
 Lending Club's current investment portfolio presents the following characteristics:
 
-**Personal Indicators:**
+**6.1 Personal Indicators:**
 - Approximately 12% are defaulters/bad borrowers.
 - Nearly three out of four loans have a 36-month term.
 - More than 75% have at least 2 years of professional experience, with over 30% having ten years or more.
@@ -71,7 +71,7 @@ Lending Club's current investment portfolio presents the following characteristi
 
 <img src="reports/personal_indicators.png">
 
-**Financial Indicators:**
+**6.2 Financial Indicators:**
 - The maximum funded amount is $35,000, with 50% falling in the range of $8,000 to $20,000. The average is around $14,000.
 - Half of the interest rates range between 11% and 16.8%, with a maximum charge of 26% and a minimum of 5.42%.
 - The average annual income is $72,970, but this value can vary significantly, including individuals with extremely high incomes. It is extremely right-skewed.
@@ -82,14 +82,14 @@ Lending Club's current investment portfolio presents the following characteristi
 <img src="reports/financial_indicators.png">
 
 
-**Credit Risk Indicators:**
+**6.3 Credit Risk Indicators:**
 - There is a monotonic decrease in default rate as the applicant's grade improves (from G to A). Higher grades correspond to lower credit risk, with the bad rate for G-grade being 6.4 times higher than that for A-grade.
 - The bad rate consistently increases as the interest rate rises, indicating that higher interest rates are associated with higher credit risk. Loans with more than 20% interest rate have a bad rate approximately 8 times higher than those with 5% to 7% interest rates.
 - The bad rate consistently decreases as annual income increases, reflecting that lower annual incomes are associated with higher credit risk. For instance, individuals with annual incomes from 1,748 dollars to 24,111 dollars have a bad rate about two times higher than those with annual incomes of 120,000 dollars or higher. The same pattern holds for the debt-to-income ratio.
 
 <img src="reports/credit_risk_grade.png">
 
-**Conclusion:**
+**6.4 Conclusion:**
 - There is an observed increasing trend in the number of loans granted over time.
 - Although Lending Club has a conservative portfolio, the default rate is very high, and motivates our project. It needs to manage risks effectively to maximize profit and maintain healthy business. 
     
