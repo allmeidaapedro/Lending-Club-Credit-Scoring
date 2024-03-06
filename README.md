@@ -98,7 +98,8 @@
     <img src="reports/increasing_trend.png">
 
 # 7. Modeling
-- 1. First of all, **data cleaning** was performed to turn the raw data suitable for data exploration and modeling. Tasks performed in this step:
+1. **Data Cleaning:**
+    - First of all, **data cleaning** was performed to turn the raw data suitable for data exploration and modeling. Tasks performed in this step:
     - Obtain a sorted dataframe, providing a chronological order for the loan data.
     - Remove features with higher than 70% missing rate, excessive cardinality, unique values per observation, no variance/constant values, and irrelevant variables to the business or modeling point of view.
     - Treat missing values, removing observations with missings when they represent a very small portion of the data and imputing them when they represent a specific value, like zero.
@@ -154,7 +155,24 @@
 
     <img src="reports/residuals_dist_lgd.png">
 
+    | Actual | Predicted | Residual |
+    |--------|-----------|----------|
+    | 0.06   | 0.10      | 0.05     |
+    | 0.15   | 0.10      | 0.05     |
+    | 0.14   | 0.15      | 0.01     |
+    | 0.16   | 0.12      | 0.05     |
+    | 0.15   | 0.09      | 0.06     |
+
+
     <img src="reports/residuals_dist_ead.png">
+
+    | Actual | Predicted | Residual |
+    |--------|-----------|----------|
+    | 0.93   | 0.82      | 0.11     |
+    | 0.90   | 0.84      | 0.06     |
+    | 0.73   | 0.64      | 0.09     |
+    | 0.96   | 0.64      | 0.31     |
+    | 0.64   | 0.70      | 0.06     |
 
 5. **Expected Loss (EL) and Credit Policy:**
     - To compute **Expected Loss (EL)**, which is the **product of Probability of Default (PD), Exposure at Default (EAD), and Loss Given Default (LGD)**, I leveraged the results of the three models (PD, EAD, and LGD Models) on the test data used for testing the PD Model, encompassing both default and non-default loans.
