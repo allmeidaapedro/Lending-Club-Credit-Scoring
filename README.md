@@ -11,7 +11,7 @@
 - **What is the Lending Club?:**
     - LendingClub is a **peer-to-peer lending platform** that facilitates the borrowing and lending of money directly between individuals, without the need for traditional financial institutions such as banks. The platform operates as an online marketplace, connecting borrowers seeking personal loans with investors willing to fund those loans.
 - **What is the business problem?**
-    - <img src="reports/default_rate.png">
+    <img src="reports/default_rate.png">
     - LendingClub faces a significant business challenge related to **managing default risks effectively** while **optimizing returns** for its investors. The platform facilitates peer-to-peer lending, connecting borrowers with investors, and relies on **accurate risk assessments to maintain a sustainable and profitable lending ecosystem.** Thus, the CEO wants us to provide insights about which factors are associated with credit risk in Lending Club's operations, and to construct models capable of predicting the probability of default for new applicants and possible losses on its loans in order to establish a credit policy, deciding when to grant a loan or not for an applicant. An important observation is that the CEO wants these models to be easy to understand. Since our company works on the internet, making customers happy and being clear is really important. So, we need to be able to explain why we decide to approve or deny a loan.
 
 - **Which are the project objectives and benefits?**
@@ -142,7 +142,7 @@
     - I estimated the two-stage LGD and EAD Models. For LGD, I combined the two predictions by taking their product. Predictions from the first stage logistic regression that predicted a recovery rate of zero remained zero, while those predicted as one received the estimated value from the second stage linear regression.
     - The **results were satisfactory**, although not impressive. Both models' **residuals distributions resembled a normal curve**, with most values around zero. Additionally, some tails were observed, indicating that the LGD Model tends to underestimate the recovery rate, and the EAD tends to overestimate it. However, with a **Mean Absolute Error (MAE) of 0.0523 and 0.1353** for the LGD and EAD Models, respectively, the models provide useful predictions. On average, the predicted recovery rates deviate by approximately 5.23 percentage points from the actual values. On average, the predicted credit conversion rates deviate by approximately 13.53 percentage points from the actual values.
 
-    - Residuals distribution and actual vs predicted values for the LGD Model.
+    Residuals distribution and actual vs predicted values for the LGD Model.
 
     <img src="reports/residuals_dist_lgd.png">
 
@@ -154,7 +154,7 @@
     | 0.16   | 0.12      | 0.05     |
     | 0.15   | 0.09      | 0.06     |
 
-    - Residuals distribution and actual vs predicted values for the EAD Model.
+    Residuals distribution and actual vs predicted values for the EAD Model.
 
     <img src="reports/residuals_dist_ead.png">
 
@@ -174,16 +174,6 @@
     - Considering the data goes up until 2015, I assumed that the United States has a basic interest rate of 2.15%.
     - After computing this credit policy, we rejected about 6.5% of the loans.
     - Moreover, the **expected loss reduced by about 11%**, representing a very good financial result! This represents 10,386,458 dollars saved. Thus, the **business problem is resolved.**
-    - Credit policy table sample:
-    
-    | Term | Interest Rate | Loan Amount | Actual | Credit Score | Risk Class | Score Range | Probability of Default (PD) | Exposure at Default (EAD) | Loss Given Default (LGD) | Expected Loss (EL) | ROI (%) | Annualized ROI (%) | Approved |
-|------|---------------|-------------|--------|--------------|------------|-------------|----------------------------|---------------------------|--------------------------|----------------------|---------|---------------------|----------|
-| 60   | 20.99         | 26000       | 1      | 593.0        | D          | 588.0-654.0 | 0.097890                   | 21767.757607              | 0.921880                 | 1964.375109         | 20.904447 | 4.181               | 1        |
-| 36   | 6.03          | 10000       | 1      | 688.0        | C          | 649.0-712.0 | 0.032105                   | 5834.006248               | 0.970821                 | 181.837559          | 6.001816  | 2.001               | 0        |
-| 60   | 20.99         | 25000       | 1      | 568.0        | E          | 551.0-593.0 | 0.127374                   | 21935.159155              | 0.921770                 | 2575.404144         | 20.876984 | 4.175               | 1        |
-| 36   | 7.12          | 15000       | 1      | 731.0        | B          | 707.0-787.0 | 0.019467                   | 9134.256592               | 0.943215                 | 167.719252          | 7.098819  | 2.366               | 1        |
-| 36   | 14.99         | 2000        | 1      | 587.0        | E          | 551.0-593.0 | 0.104390                   | 1382.756353               | 0.958047                 | 138.289822          | 14.910855 | 4.970               | 1        |
-
 
 6. **Model Monitoring:**
     - Imagine a year has passed since we built our PD model. Although it is very unlikely, the people applying for loans now might be very different from those we used to train our PD model. We need to reassess if our PD model is working well.
