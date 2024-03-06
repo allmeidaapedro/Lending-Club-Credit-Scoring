@@ -174,6 +174,16 @@
     - Considering the data goes up until 2015, I assumed that the United States has a basic interest rate of 2.15%.
     - After computing this credit policy, we rejected about 6.5% of the loans.
     - Moreover, the **expected loss reduced by about 11%**, representing a very good financial result! This represents 10,386,458 dollars saved. Thus, the **business problem is resolved.**
+    - Credit policy table sample:
+    
+    | Term | Interest Rate | Loan Amount | Actual | Credit Score | Risk Class | Score Range | Probability of Default (PD) | Exposure at Default (EAD) | Loss Given Default (LGD) | Expected Loss (EL) | ROI (%) | Annualized ROI (%) | Approved |
+|------|---------------|-------------|--------|--------------|------------|-------------|----------------------------|---------------------------|--------------------------|----------------------|---------|---------------------|----------|
+| 60   | 20.99         | 26000       | 1      | 593.0        | D          | 588.0-654.0 | 0.097890                   | 21767.757607              | 0.921880                 | 1964.375109         | 20.904447 | 4.181               | 1        |
+| 36   | 6.03          | 10000       | 1      | 688.0        | C          | 649.0-712.0 | 0.032105                   | 5834.006248               | 0.970821                 | 181.837559          | 6.001816  | 2.001               | 0        |
+| 60   | 20.99         | 25000       | 1      | 568.0        | E          | 551.0-593.0 | 0.127374                   | 21935.159155              | 0.921770                 | 2575.404144         | 20.876984 | 4.175               | 1        |
+| 36   | 7.12          | 15000       | 1      | 731.0        | B          | 707.0-787.0 | 0.019467                   | 9134.256592               | 0.943215                 | 167.719252          | 7.098819  | 2.366               | 1        |
+| 36   | 14.99         | 2000        | 1      | 587.0        | E          | 551.0-593.0 | 0.104390                   | 1382.756353               | 0.958047                 | 138.289822          | 14.910855 | 4.970               | 1        |
+
 
 6. **Model Monitoring:**
     - Imagine a year has passed since we built our PD model. Although it is very unlikely, the people applying for loans now might be very different from those we used to train our PD model. We need to reassess if our PD model is working well.
