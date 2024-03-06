@@ -135,7 +135,7 @@ def compute_credit_policy(data, pd_data, ead_data, lgd_data, loan_fee, auto_appr
                                                         })
         
         # Put the credit policy df in better interpretable order.
-        credit_policy_df = credit_policy_df[['Term', 'Interest Rate', 'Loan Amount',
+        credit_policy_df = credit_policy_df[['Term', 'Interest Rate', 'Loan Amount', 'Actual',
                                              'Credit Score', 'Risk Class', 'Score Range',
                                              'Probability of Default (PD)',
                                              'Exposure at Default (EAD)',
