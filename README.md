@@ -10,10 +10,11 @@
 # 2. Business Problem and Objectives
 **What is the Lending Club?:**
 - LendingClub is a **peer-to-peer lending platform** that facilitates the borrowing and lending of money directly between individuals, without the need for traditional financial institutions such as banks. The platform operates as an online marketplace, connecting borrowers seeking personal loans with investors willing to fund those loans.
+
 **What is the business problem?**
 - LendingClub faces a significant business challenge related to **managing default risks effectively** while **optimizing returns** for its investors. The platform facilitates peer-to-peer lending, connecting borrowers with investors, and relies on **accurate risk assessments to maintain a sustainable and profitable lending ecosystem.** Thus, the CEO wants us to provide insights about which factors are associated with credit risk in Lending Club's operations, and to construct models capable of predicting the probability of default for new applicants and possible losses on its loans in order to establish a credit policy, deciding when to grant a loan or not for an applicant. An important observation is that the CEO wants these models to be easy to understand. Since our company works on the internet, making customers happy and being clear is really important. So, we need to be able to explain why we decide to approve or deny a loan.
 
-    <img src="reports/default_rate.png">
+<img src="reports/default_rate.png">
 
 **Which are the project objectives and benefits?**
 1. Identify the factors associated with **credit risk** in the form of business **insights.**
@@ -21,6 +22,7 @@
 3. Develop **Exposure at Default (EAD) and Loss Given Default (LGD) Models**, to estimate the **Expected Loss** in loans. This will allow Lending Club to **hold** sufficient **capital** to protect itself against default in each loan.
 4. Improve **risk management** and optimize **returns** by establishing a **credit policy**, trying to balance risk and **ROI** of Lending Club's assets.
 5. Apply **model monitoring** and maintenance techniques to safeguard our results from population instability, characterized by significant changes in loan applicants' characteristics. This will allow us to understand whether the built model is still useful in the future or whether the loan applicants characteristics changed significantly, such that we will need to redevelop it.
+
 **Which are the important concepts to know in the context of credit risk?**
 - **Financial institutions**, like LendingClub and online lending platforms, **make money by lending to people and businesses.** When they lend money, they **charge interest**, which is a significant source of their **profits**. **Managing credit risk well is crucial** for these institutions. This means ensuring that borrowers pay back their loans on time to avoid losses.
 - **Credit risk** is the possibility that a borrower might not fulfill their financial obligations, leading to a loss for the lender. If a borrower fails to meet the agreed-upon terms, it's called a "default," and it can result in financial losses for the lender. The **default** definition is associated with a time horizon. For example, if a borrower hasn't paid their debt within 90 days of the due date, they are considered in default.
@@ -67,6 +69,8 @@ Lending Club's current investment portfolio presents the following characteristi
 - Over 15% live in California.
 - Everything pointed out above suggests a conservative profile among applicants: older individuals with financial and professional stability.
 
+<img src="reports/personal_indicators.png">
+
 **Financial Indicators:**
 - The maximum funded amount is $35,000, with 50% falling in the range of $8,000 to $20,000. The average is around $14,000.
 - Half of the interest rates range between 11% and 16.8%, with a maximum charge of 26% and a minimum of 5.42%.
@@ -75,17 +79,20 @@ Lending Club's current investment portfolio presents the following characteristi
 - Half have a credit limit ranging from $13,500 to $37,300. However, similar to annual income, this value can vary significantly, including individuals with extremely high credit limits.
 - Everything pointed out above suggests a conservative investment portfolio, with no high funded amounts or interest rates charged. 
 
+<img src="reports/financial_indicators.png">
+
+
 **Credit Risk Indicators:**
 - There is a monotonic decrease in default rate as the applicant's grade improves (from G to A). Higher grades correspond to lower credit risk, with the bad rate for G-grade being 6.4 times higher than that for A-grade.
 - The bad rate consistently increases as the interest rate rises, indicating that higher interest rates are associated with higher credit risk. Loans with more than 20% interest rate have a bad rate approximately 8 times higher than those with 5% to 7% interest rates.
 - The bad rate consistently decreases as annual income increases, reflecting that lower annual incomes are associated with higher credit risk. For instance, individuals with annual incomes from 1,748 dollars to 24,111 dollars have a bad rate about two times higher than those with annual incomes of 120,000 dollars or higher. The same pattern holds for the debt-to-income ratio.
+
+<img src="reports/credit_risk_grade.png">
+
+**Conclusion:**
 - There is an observed increasing trend in the number of loans granted over time.
 - Although Lending Club has a conservative portfolio, the default rate is very high, and motivates our project. It needs to manage risks effectively to maximize profit and maintain healthy business. 
     
-<img src="reports/personal_indicators.png">
-
-<img src="reports/financial_indicators.png">
-
 <img src="reports/increasing_trend.png">
 
 # 7. Modeling
@@ -110,28 +117,30 @@ Lending Club's current investment portfolio presents the following characteristi
 **7.3 PD Modeling:**
 - In PD modeling, I initially excluded variables that would not be available at the time of prediction to prevent data leakage, such as the funded amount or total payments. Additionally, I eliminated variables that demonstrated no discriminatory power during the Exploratory Data Analysis (EDA).
 - Subsequently, I conducted an **out-of-time train-test split**, which is considered the best approach for PD, EAD, and LGD Modeling. This is crucial as we construct models using past data to predict future applicants' data.
+
+<img src="reports/out_of_time_split.png">
+
 - Following this, I applied the necessary **preprocessing**, creating the **dummy variables** determined in the EDA step. I discretized the identified continuous features and then grouped all the specified categories to obtain the final dummies, eliminating the respective reference categories. An important observation is that I considered missing values in a variable as another category of it, because they showed a higher proportion of defaults, not being missing values at random.
 - Once the data was preprocessed, I estimated the **PD Model using hypothesis testing to evaluate p-values** for the predictor variables. This helped determine whether these variables were statistically significant (i.e., had a coefficient different from zero) or not.
 - Independent variables with all dummies containing p-values higher than an alpha of 0.05 were removed, simplifying the model.
 - **Interpretation of the coefficients** was performed. For instance, considering the coefficient for sub_grade_A3_A2_A1 as 0.694287, we can infer that the odds of being classified as good for a borrower with A1/A2/A3 subgrades are exp(0.694287) = 2.0 times greater than the odds for someone with G1/G2/G3/G4/G5/F2/F3/F4/F5 subgrades (the reference category).
 - Subsequently, I **evaluated the PD Model** by dividing the **scores** into **deciles** and assessing whether there was **ordering** in them. Indeed, in both the training and test data, there was a clear ordering: the lower the credit risk or the higher the score, the lower the bad rate. Moreover, more than 50% of the bad borrowers were observed up to the third decile/score.
 
-    <img src="reports/out_of_time_split.png">
 
-    <img src="reports/ordering_per_decile.png">
+<img src="reports/ordering_per_decile.png">
 
-    <img src="reports/cum_bad_rate_decile.png">
+<img src="reports/cum_bad_rate_decile.png">
 
 - Furthermore, with a **KS** of approximately **0.3**, an **ROC-AUC** of around **0.7**, and a **Gini** coefficient of about **0.4** on the test set, the application model exhibits **satisfactory performance**. The model demonstrates effective discriminatory power, distinguishing well between good and bad borrowers. Examining the **Brier** Score, it is very **close to zero**, indicating that the model presents **well-calibrated probabilities** or scores. Furthermore, the **train and test scores** for each of these metrics are quite **similar**. Consequently, the model is not overfitted, has captured the underlying patterns within the data, and is likely to distinguish well between good and bad borrowers in new, unseen data.
 
-    <img src="reports/roc_auc.png">
+<img src="reports/roc_auc.png">
 
-    | Metric | Train Value | Test Value |
-    |--------|-------------|------------|
-    | KS     | 0.268181    | 0.297876   |
-    | AUC    | 0.683655    | 0.703449   |
-    | Gini   | 0.367310    | 0.406897   |
-    | Brier  | 0.100512    | 0.061633   |
+| Metric | Train Value | Test Value |
+|--------|-------------|------------|
+| KS     | 0.268181    | 0.297876   |
+| AUC    | 0.683655    | 0.703449   |
+| Gini   | 0.367310    | 0.406897   |
+| Brier  | 0.100512    | 0.061633   |
 
 - Finally, a **scorecard** was developed, transforming the coefficients from the PD Model into easily interpretable integer values known as scores. Various formulas were employed to compute these scores, with a minimum score of 300 and a maximum of 850. Subsequently, **credit scores** were **calculated for all borrowers** in both the training and test datasets by multiplying each dummy by its scores and summing the intercept.
 
@@ -149,29 +158,29 @@ Lending Club's current investment portfolio presents the following characteristi
 - I estimated the two-stage LGD and EAD Models. For LGD, I combined the two predictions by taking their product. Predictions from the first stage logistic regression that predicted a recovery rate of zero remained zero, while those predicted as one received the estimated value from the second stage linear regression.
 - The **results were satisfactory**, although not impressive. Both models' **residuals distributions resembled a normal curve**, with most values around zero. Additionally, some tails were observed, indicating that the LGD Model tends to underestimate the recovery rate, and the EAD tends to overestimate it. However, with a **Mean Absolute Error (MAE) of 0.0523 and 0.1353** for the LGD and EAD Models, respectively, the models provide useful predictions. On average, the predicted recovery rates deviate by approximately 5.23 percentage points from the actual values. On average, the predicted credit conversion rates deviate by approximately 13.53 percentage points from the actual values.
 
-    Residuals distribution and actual vs predicted values for the LGD Model.
+Residuals distribution and actual vs predicted values for the LGD Model.
 
-    <img src="reports/residuals_dist_lgd.png">
+<img src="reports/residuals_dist_lgd.png">
 
-    | Actual | Predicted | Residual |
-    |--------|-----------|----------|
-    | 0.06   | 0.10      | 0.05     |
-    | 0.15   | 0.10      | 0.05     |
-    | 0.14   | 0.15      | 0.01     |
-    | 0.16   | 0.12      | 0.05     |
-    | 0.15   | 0.09      | 0.06     |
+| Actual | Predicted | Residual |
+|--------|-----------|----------|
+| 0.06   | 0.10      | 0.05     |
+| 0.15   | 0.10      | 0.05     |
+| 0.14   | 0.15      | 0.01     |
+| 0.16   | 0.12      | 0.05     |
+| 0.15   | 0.09      | 0.06     |
 
-    Residuals distribution and actual vs predicted values for the EAD Model.
+Residuals distribution and actual vs predicted values for the EAD Model.
 
-    <img src="reports/residuals_dist_ead.png">
+<img src="reports/residuals_dist_ead.png">
 
-    | Actual | Predicted | Residual |
-    |--------|-----------|----------|
-    | 0.93   | 0.82      | 0.11     |
-    | 0.90   | 0.84      | 0.06     |
-    | 0.73   | 0.64      | 0.09     |
-    | 0.96   | 0.64      | 0.31     |
-    | 0.64   | 0.70      | 0.06     |
+| Actual | Predicted | Residual |
+|--------|-----------|----------|
+| 0.93   | 0.82      | 0.11     |
+| 0.90   | 0.84      | 0.06     |
+| 0.73   | 0.64      | 0.09     |
+| 0.96   | 0.64      | 0.31     |
+| 0.64   | 0.70      | 0.06     |
 
 **7.5 Expected Loss (EL) and Credit Policy:**
 - To compute **Expected Loss (EL)**, which is the **product of Probability of Default (PD), Exposure at Default (EAD), and Loss Given Default (LGD)**, I leveraged the results of the three models (PD, EAD, and LGD Models) on the test data used for testing the PD Model, encompassing both default and non-default loans.
