@@ -47,12 +47,12 @@
 - Data cleaning, manipulation, visualization and exploration.
 
 # 5. Project Structure
-- Artifacts: Contains the machine learning models artifacts, such as the pkl files.
-- Input: Contains the raw input data and data dictionary.
-- Notebooks: Contains all jupyter notebooks developed. It is the research environment
-- Reports: Contains images for storytelling.
-- Src: Contains python scripts including eda and modeling utils, exception and logger.
-- Requirements.txt and setup.py are tools to build my project as a package.
+- **Artifacts:** Contains the machine learning models artifacts, such as the pkl files.
+- **Input:** Contains the raw input data and data dictionary.
+- **Notebooks:** Contains all jupyter notebooks developed. It is the research environment
+- **Reports:** Contains images for storytelling.
+- **Src:** Contains python scripts including eda and modeling utils, exception and logger.
+- **Requirements.txt** and **setup.py** are tools to build my project as a package.
 
 # 6. Main Business Credit Risk Insights
 - Lending Club's current investment portfolio presents the following characteristics:
@@ -98,7 +98,7 @@
     <img src="reports/increasing_trend.png">
 
 # 7. Modeling
-- 1. First of all, data cleaning was performed to turn the raw data suitable for data exploration and modeling. Tasks performed in this step:
+- 1. First of all, **data cleaning** was performed to turn the raw data suitable for data exploration and modeling. Tasks performed in this step:
     - Obtain a sorted dataframe, providing a chronological order for the loan data.
     - Remove features with higher than 70% missing rate, excessive cardinality, unique values per observation, no variance/constant values, and irrelevant variables to the business or modeling point of view.
     - Treat missing values, removing observations with missings when they represent a very small portion of the data and imputing them when they represent a specific value, like zero.
@@ -108,24 +108,24 @@
     - ⁠Search and fix inconsistent outlier values.
     - ⁠Optimize memory, obtaining a final parquet file.
     - As a result, we went from 75 features to a dataset with 39 variables in its correct data types, optimized in terms of memory usage, with some missing values and outliers treat and new useful extracted features. 
-2. Exploratory data analysis:
-    - The goal of the exploratory data analysis was to investigate Lending Club's current investment portfolio's personal, financial, and credit risk indicators, as previously mentioned. Additionally, in this step, I determined the final set of dummy variables to construct for the PD Model, essentially outlining the preprocessing steps to be undertaken.
-    - Due to interpretability requirements, the PD Model must include only dummy variables. To create these dummies, I analyzed the discriminatory power of each categorical and numerical variable by assessing the Weight of Evidence (WoE) for each category. Subsequently, using both the WoE values and the proportion of observations, I grouped categories together to construct additional dummies. The goal was to combine similar credit risk/WoE categories and categories with low proportions of observations (to prevent overfitting). An important observation is that the highest credit risk or lowest WoE categories, the reference categories, were separated for further dropping, in order to avoid multicolinearity issues (dummy variable trap). 
-    - For continuous features, I applied feature discretization to facilitate this categorical analysis. Discretizing continuous features allows for a more comprehensive understanding of their relationship with the target variable. This process helps minimize the impact of outliers and asymmetries, enables the assessment of potential linear monotonic behaviors, and provides the opportunity to apply treatments when such behaviors are not observed. It's important to note, however, that discretization comes at the cost of increased dimensionality and a loss of information.
-3. PD Modeling:
+2. **Exploratory data analysis:**
+    - The goal of the exploratory data analysis was to **investigate Lending Club's current investment portfolio's personal, financial, and credit risk indicators**, as previously mentioned. Additionally, in this step, I **determined** the final set of **dummy variables** to construct for the **PD Model**, essentially outlining the preprocessing steps to be undertaken.
+    - Due to interpretability requirements, the PD Model must include only dummy variables. To create these dummies, I analyzed the discriminatory power of each categorical and numerical variable by assessing the **Weight of Evidence (WoE)** for each category. Subsequently, using both the WoE values and the proportion of observations, I grouped categories together to construct additional dummies. The goal was to **combine** similar credit risk/WoE **categories** and categories with low proportions of observations (to prevent overfitting). An important observation is that the highest credit risk or lowest WoE categories, the reference categories, were separated for further dropping, in order to avoid multicolinearity issues (dummy variable trap). 
+    - For **continuous features**, I applied **feature discretization** to facilitate this categorical analysis. Discretizing continuous features allows for a more comprehensive understanding of their relationship with the target variable. This process helps minimize the impact of outliers and asymmetries, enables the assessment of potential linear monotonic behaviors, and provides the opportunity to apply treatments when such behaviors are not observed. It's important to note, however, that discretization comes at the cost of increased dimensionality and a loss of information.
+3. **PD Modeling:**
     - In PD modeling, I initially excluded variables that would not be available at the time of prediction to prevent data leakage, such as the funded amount or total payments. Additionally, I eliminated variables that demonstrated no discriminatory power during the Exploratory Data Analysis (EDA).
-    - Subsequently, I conducted an out-of-time train-test split, which is considered the best approach for PD, EAD, and LGD Modeling. This is crucial as we construct models using past data to predict future applicants' data.
-    - Following this, I applied the necessary preprocessing, creating the dummy variables determined in the EDA step. I discretized the identified continuous features and then grouped all the specified categories to obtain the final dummies, eliminating the respective reference categories. An important observation is that I considered missing values in a variable as another category of it, because they showed a higher proportion of defaults, not being missing values at random.
-    - Once the data was preprocessed, I estimated the PD Model using hypothesis testing to evaluate p-values for the predictor variables. This helped determine whether these variables were statistically significant (i.e., had a coefficient different from zero) or not.
+    - Subsequently, I conducted an **out-of-time train-test split**, which is considered the best approach for PD, EAD, and LGD Modeling. This is crucial as we construct models using past data to predict future applicants' data.
+    - Following this, I applied the necessary **preprocessing**, creating the **dummy variables** determined in the EDA step. I discretized the identified continuous features and then grouped all the specified categories to obtain the final dummies, eliminating the respective reference categories. An important observation is that I considered missing values in a variable as another category of it, because they showed a higher proportion of defaults, not being missing values at random.
+    - Once the data was preprocessed, I estimated the **PD Model using hypothesis testing to evaluate p-values** for the predictor variables. This helped determine whether these variables were statistically significant (i.e., had a coefficient different from zero) or not.
     - Independent variables with all dummies containing p-values higher than an alpha of 0.05 were removed, simplifying the model.
-    - Interpretation of the coefficients was performed. For instance, considering the coefficient for sub_grade_A3_A2_A1 as 0.694287, we can infer that the odds of being classified as good for a borrower with A1/A2/A3 subgrades are exp(0.694287) = 2.0 times greater than the odds for someone with G1/G2/G3/G4/G5/F2/F3/F4/F5 subgrades (the reference category).
-    - Subsequently, I evaluated the PD Model by dividing the scores into deciles and assessing whether there was ordering in them. Indeed, in both the training and test data, there was a clear ordering: the lower the credit risk or the higher the score, the lower the bad rate. Moreover, more than 50% of the bad borrowers were observed up to the third decile/score.
+    - **Interpretation of the coefficients** was performed. For instance, considering the coefficient for sub_grade_A3_A2_A1 as 0.694287, we can infer that the odds of being classified as good for a borrower with A1/A2/A3 subgrades are exp(0.694287) = 2.0 times greater than the odds for someone with G1/G2/G3/G4/G5/F2/F3/F4/F5 subgrades (the reference category).
+    - Subsequently, I **evaluated the PD Model** by dividing the **scores** into **deciles** and assessing whether there was **ordering** in them. Indeed, in both the training and test data, there was a clear ordering: the lower the credit risk or the higher the score, the lower the bad rate. Moreover, more than 50% of the bad borrowers were observed up to the third decile/score.
 
     <img src="reports/ordering_per_decile.png">
 
     <img src="reports/cum_bad_rate_decile.png">
 
-    - Finally, with a KS of approximately 0.3, an ROC-AUC of around 0.7, and a Gini coefficient of about 0.4 on the test set, the application model exhibits satisfactory performance. The model demonstrates effective discriminatory power, distinguishing well between good and bad borrowers. Examining the Brier Score, it is very close to zero, indicating that the model presents well-calibrated probabilities or scores. Furthermore, the train and test scores for each of these metrics are quite similar. Consequently, the model is not overfitted, has captured the underlying patterns within the data, and is likely to distinguish well between good and bad borrowers in new, unseen data.
+    - Finally, with a **KS** of approximately **0.3**, an **ROC-AUC** of around **0.7**, and a **Gini** coefficient of about **0.4** on the test set, the application model exhibits **satisfactory performance**. The model demonstrates effective discriminatory power, distinguishing well between good and bad borrowers. Examining the **Brier** Score, it is very **close to zero**, indicating that the model presents **well-calibrated probabilities** or scores. Furthermore, the **train and test scores** for each of these metrics are quite **similar**. Consequently, the model is not overfitted, has captured the underlying patterns within the data, and is likely to distinguish well between good and bad borrowers in new, unseen data.
 
     <img src="reports/roc_auc.png">
 
@@ -136,41 +136,41 @@
     | Gini   | 0.367310    | 0.406897   |
     | Brier  | 0.100512    | 0.061633   |
 
-    - Finally, a scorecard was developed, transforming the coefficients from the PD Model into easily interpretable integer values known as scores. Various formulas were employed to compute these scores, with a minimum score of 300 and a maximum of 850. Subsequently, credit scores were calculated for all borrowers in both the training and test datasets by multiplying each dummy by its scores and summing the intercept.
+    - Finally, a **scorecard** was developed, transforming the coefficients from the PD Model into easily interpretable integer values known as scores. Various formulas were employed to compute these scores, with a minimum score of 300 and a maximum of 850. Subsequently, **credit scores** were **calculated for all borrowers** in both the training and test datasets by multiplying each dummy by its scores and summing the intercept.
 
-4. EAD and LGD Modeling:
-    - Initially, I isolated data containing defaulted loans with a "charged off" status, ensuring sufficient time had passed for potential recoveries.
+4. **EAD and LGD Modeling:**
+    - Initially, I **isolated data containing defaulted loans with a "charged off" status**, ensuring sufficient time had passed for potential recoveries.
     - Similar to the PD Model, I excluded irrelevant variables and those that could introduce data leakage.
-    - Subsequently, I performed an out-of-time train-test split, following the same approach as with the PD Model.
-    - Following this, I investigated both dependent variables:
-        - The dependent variable for the LGD Model is the recovery rate, defined as recoveries divided by the funded amount. Although LGD represents the proportion of the total exposure that cannot be recovered by the lender when the borrower defaults, it is common to model the proportion that CAN be recovered. Thus, LGD will be equal to 1 minus the Recovery Rate.
-        - The dependent variable for the EAD model is the credit conversion factor, representing the proportion of the funded amount outstanding to pay. Therefore, EAD equals the funded amount multiplied by this credit conversion factor.
-        - Almost 50% of the recovery rates were zero. Consequently, I opted to model LGD using a two-stage approach. First, a logistic regression predicts whether the recovery rate is greater than zero (1) or zero (0). Then, for those predicted as greater than zero, a linear regression estimates its corresponding value.
+    - Subsequently, I performed an **out-of-time train-test split**, following the same approach as with the PD Model.
+    - Following this, I **investigated both dependent variables:**
+        - The dependent variable for the **LGD Model** is the **recovery rate**, defined as recoveries divided by the funded amount. Although LGD represents the proportion of the total exposure that cannot be recovered by the lender when the borrower defaults, it is common to model the proportion that CAN be recovered. Thus, **LGD** will be equal to **1 minus the Recovery Rate.**
+        - The dependent variable for the **EAD model** is the **credit conversion factor**, representing the proportion of the funded amount outstanding to pay. Therefore, **EAD** equals the **funded amount multiplied by this credit conversion factor.**
+        - Almost **50% of the recovery rates were zero.** Consequently, I opted to **model LGD using a two-stage approach**. First, a logistic regression predicts whether the recovery rate is greater than zero (1) or zero (0). Then, for those predicted as greater than zero, a linear regression estimates its corresponding value.
         - The credit conversion factor exhibited a reasonable distribution, leading me to decide on estimating a simple linear regression.
         - An important observation is that, although LGD and EAD are beta-distributed dependent variables, representing rates, and beta regression is more suitable for estimating them, I tested it against Linear Regression, and almost the same result was achieved. Thus, considering the need to treat 0 and 1 values for beta regression (e.g., replacing them with 0.0001 and 0.9999), for simplicity, I proceeded with linear regression.
-    - Data preprocessing involved one-hot encoding for nominal categorical variables, as linear models benefit from this encoding. For ordinal categorical variables, ordinal encoding was applied to reduce dimensionality and preserve ordering information. Standard scaling was applied to both ordinal encoded and numerical variables since linear models are sensitive to feature scaling. Missing values were imputed with the median due to an extremely right-skewed variable distribution.
+    - **Data preprocessing** involved one-hot encoding for nominal categorical variables, as linear models benefit from this encoding. For ordinal categorical variables, ordinal encoding was applied to reduce dimensionality and preserve ordering information. Standard scaling was applied to both ordinal encoded and numerical variables since linear models are sensitive to feature scaling. Missing values were imputed with the median due to an extremely right-skewed variable distribution.
     - I estimated the two-stage LGD and EAD Models. For LGD, I combined the two predictions by taking their product. Predictions from the first stage logistic regression that predicted a recovery rate of zero remained zero, while those predicted as one received the estimated value from the second stage linear regression.
-    - The results were satisfactory, although not impressive. Both models' residuals distributions resembled a normal curve, with most values around zero. Additionally, some tails were observed, indicating that the LGD Model tends to underestimate the recovery rate, and the EAD tends to overestimate it. However, with a Mean Absolute Error (MAE) of 0.0523 and 0.1353 for the LGD and EAD Models, respectively, the models provide useful predictions. On average, the predicted recovery rates deviate by approximately 5.23 percentage points from the actual values. On average, the predicted credit conversion rates deviate by approximately 13.53 percentage points from the actual values.
+    - The **results were satisfactory**, although not impressive. Both models' **residuals distributions resembled a normal curve**, with most values around zero. Additionally, some tails were observed, indicating that the LGD Model tends to underestimate the recovery rate, and the EAD tends to overestimate it. However, with a **Mean Absolute Error (MAE) of 0.0523 and 0.1353** for the LGD and EAD Models, respectively, the models provide useful predictions. On average, the predicted recovery rates deviate by approximately 5.23 percentage points from the actual values. On average, the predicted credit conversion rates deviate by approximately 13.53 percentage points from the actual values.
 
     <img src="reports/residuals_dist_lgd.png">
 
     <img src="reports/residuals_dist_ead.png">
 
-5. Expected Loss (EL) and Credit Policy:
-    - To compute Expected Loss (EL), which is the product of Probability of Default (PD), Exposure at Default (EAD), and Loss Given Default (LGD), I leveraged the results of the three models (PD, EAD, and LGD Models) on the test data used for testing the PD Model, encompassing both default and non-default loans.
-    - I created 8 risk classes (A, B, C, D, E, F, G, H) based on the probability of default because this way we can better leverage the results of the credit scoring model, and it is possible to establish different policies for individuals in different risk classes.
-    - In this context, Lending Club is adopting a more conservative profile with a focus on the profitability of its assets. The goal is to mitigate risks associated with higher-risk and potential default loans while maximizing profitability.
-    - To achieve this, the CEO has outlined a conservative credit policy: We will automatically approve loans for applicants who fall into A and B risk classes (indicating the lowest credit risk and highest credit scores) and automatically deny those who fall into the H class (indicating the highest credit risk and lowest credit scores). For the other classes, the loan must provide an annualized Return on Investment (ROI) greater than the basic United States interest rate. This criterion aligns with the rationale that if a loan's expected ROI doesn't surpass this interest rate, it may be more prudent to invest in less risky options, such as fixed-income investments.
+5. **Expected Loss (EL) and Credit Policy:**
+    - To compute **Expected Loss (EL)**, which is the **product of Probability of Default (PD), Exposure at Default (EAD), and Loss Given Default (LGD)**, I leveraged the results of the three models (PD, EAD, and LGD Models) on the test data used for testing the PD Model, encompassing both default and non-default loans.
+    - I **created 8 risk classes (A, B, C, D, E, F, G, H)** based on the probability of default because this way we can better leverage the results of the credit scoring model, and it is possible to establish different policies for individuals in different risk classes.
+    - In this context, **Lending Club** is adopting a more **conservative profile** with a focus on the **profitability** of its assets. The goal is to mitigate risks associated with higher-risk and potential default loans while maximizing profitability.
+    - To achieve this, the **CEO has outlined a conservative credit policy:** We will automatically approve loans for applicants who fall into A and B risk classes (indicating the lowest credit risk and highest credit scores) and automatically deny those who fall into the H class (indicating the highest credit risk and lowest credit scores). For the other classes, the loan must provide an annualized Return on Investment (ROI) greater than the basic United States interest rate. This criterion aligns with the rationale that if a loan's expected ROI doesn't surpass this interest rate, it may be more prudent to invest in less risky options, such as fixed-income investments.
     - Considering the data goes up until 2015, I assumed that the United States has a basic interest rate of 2.15%.
     - After computing this credit policy, we rejected about 6.5% of the loans.
-    - Moreover, the expected loss reduced by about 11%, representing a very good financial result! This represents 10,386,458 dollars saved. Thus, the business problem is resolved.
+    - Moreover, the **expected loss reduced by about 11%**, representing a very good financial result! This represents 10,386,458 dollars saved. Thus, the **business problem is resolved.**
 
-6. Model Monitoring:
+6. **Model Monitoring:**
     - Imagine a year has passed since we built our PD model. Although it is very unlikely, the people applying for loans now might be very different from those we used to train our PD model. We need to reassess if our PD model is working well.
     - If the population of the new applicants is too different from the population we used to build the model, the results may be disastrous. In such cases, we need to redevelop the model.
-    - I applied model monitoring to our PD Model one year after its construction, using 2015 loan data. Model monitoring aims to observe whether applicants' characteristics remain consistent over time. The fundamental assumption in credit risk models is that future data will resemble past data. If the population changes significantly, it may be necessary to retrain the model. To assess differences between the actual (training data) and expected (monitoring data), the Population Stability Index (PSI) was calculated for each variable.
+    - I applied **model monitoring to our PD Model one year after its construction, using 2015 loan data**. Model monitoring aims to observe whether applicants' characteristics remain consistent over time. The fundamental assumption in credit risk models is that future data will resemble past data. If the population changes significantly, it may be necessary to retrain the model. To assess differences between the actual (training data) and expected (monitoring data), the **Population Stability Index (PSI)** was calculated for each variable.
     - Initial list status exhibited the highest PSI, nearly equal to 0.25, indicating a substantial change in the applicants' population. However, this change is more likely due to shifts in the bank's strategies than changes in the borrowers' characteristics.
-    - On the other hand, credit scores showed a PSI of 0.19, close to 0.25. This suggests that we may need to construct another PD Model in the near future. This represents a significant population change, implying that our model outputs are considerably different from those observed previously.
+    - On the other hand, **credit scores** showed a PSI of 0.19, close to 0.25. This suggests that we may need to construct another PD Model in the near future. This represents a **significant population change, implying that our model outputs are considerably different from those observed previously.**
 
 
 # 8. Obtain the Data
