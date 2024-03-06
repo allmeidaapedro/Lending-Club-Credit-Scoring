@@ -142,6 +142,8 @@
     - I estimated the two-stage LGD and EAD Models. For LGD, I combined the two predictions by taking their product. Predictions from the first stage logistic regression that predicted a recovery rate of zero remained zero, while those predicted as one received the estimated value from the second stage linear regression.
     - The **results were satisfactory**, although not impressive. Both models' **residuals distributions resembled a normal curve**, with most values around zero. Additionally, some tails were observed, indicating that the LGD Model tends to underestimate the recovery rate, and the EAD tends to overestimate it. However, with a **Mean Absolute Error (MAE) of 0.0523 and 0.1353** for the LGD and EAD Models, respectively, the models provide useful predictions. On average, the predicted recovery rates deviate by approximately 5.23 percentage points from the actual values. On average, the predicted credit conversion rates deviate by approximately 13.53 percentage points from the actual values.
 
+    - Residuals distribution and actual vs predicted values for the LGD Model.
+
     <img src="reports/residuals_dist_lgd.png">
 
     | Actual | Predicted | Residual |
@@ -152,6 +154,7 @@
     | 0.16   | 0.12      | 0.05     |
     | 0.15   | 0.09      | 0.06     |
 
+    - Residuals distribution and actual vs predicted values for the EAD Model.
 
     <img src="reports/residuals_dist_ead.png">
 
