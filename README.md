@@ -13,7 +13,7 @@
 - **What is the business problem?**
     - LendingClub faces a significant business challenge related to **managing default risks effectively** while **optimizing returns** for its investors. The platform facilitates peer-to-peer lending, connecting borrowers with investors, and relies on **accurate risk assessments to maintain a sustainable and profitable lending ecosystem.** Thus, the CEO wants us to provide insights about which factors are associated with credit risk in Lending Club's operations, and to construct models capable of predicting the probability of default for new applicants and possible losses on its loans in order to establish a credit policy, deciding when to grant a loan or not for an applicant. An important observation is that the CEO wants these models to be easy to understand. Since our company works on the internet, making customers happy and being clear is really important. So, we need to be able to explain why we decide to approve or deny a loan.
 
-    <img src="reports/default_rate.png">
+<img src="reports/default_rate.png">
 
 - **Which are the project objectives and benefits?**
     1. Identify the factors associated with **credit risk** in the form of business **insights.**
@@ -111,7 +111,7 @@
     - Subsequently, I **evaluated the PD Model** by dividing the **scores** into **deciles** and assessing whether there was **ordering** in them. Indeed, in both the training and test data, there was a clear ordering: the lower the credit risk or the higher the score, the lower the bad rate. Moreover, more than 50% of the bad borrowers were observed up to the third decile/score.
 
     <img src="reports/out_of_time_split.png">
-    
+
     <img src="reports/ordering_per_decile.png">
 
     <img src="reports/cum_bad_rate_decile.png">
