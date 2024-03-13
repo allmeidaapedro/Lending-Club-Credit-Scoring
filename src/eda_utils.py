@@ -22,7 +22,7 @@ from warnings import filterwarnings
 filterwarnings('ignore')
 
 
-def univariate_analysis_plots(data, features, histplot=True, barplot=False, mean=None,     
+def univariate_analysis_plots(data, features, histplot=True, barplot=False, mean=None, text_y=0.5,    
                               outliers=False, kde=False, color='#8d0801', figsize=(24, 12)):
     '''
     Generate plots for univariate analysis.
@@ -36,6 +36,7 @@ def univariate_analysis_plots(data, features, histplot=True, barplot=False, mean
         histplot (bool, optional): Generate histograms. Default is True.
         barplot (bool, optional): Generate horizontal bar plots. Default is False.
         mean (bool, optional): Generate mean bar plots of specified feature instead of proportion bar plots. Default is None.
+        text_y (float, optional): Y coordinate for text on bar plots. Default is 0.5.
         outliers (bool, optional): Generate boxplots for outliers visualization. Default is False.
         kde (bool, optional): Plot Kernel Density Estimate in histograms. Default is False.
         color (str, optional): The color of the plot. Default is '#8d0801'.
@@ -69,14 +70,14 @@ def univariate_analysis_plots(data, features, histplot=True, barplot=False, mean
                     bars = ax.barh(y=data_grouped[feature], width=data_grouped[mean], color=color)
                     for index, value in enumerate(data_grouped[mean]):
                         # Adjusting the text position based on the width of the bars
-                        ax.text(value + 0.5, index, f'{value:.1f}', va='center', fontsize=15)
+                        ax.text(value + text_y, index, f'{value:.1f}', va='center', fontsize=15)
                 else:
                     data_grouped = data.groupby([feature])[[feature]].count().rename(columns={feature: 'count'}).reset_index()
                     data_grouped['pct'] = round(data_grouped['count'] / data_grouped['count'].sum() * 100, 2)
                     bars = ax.barh(y=data_grouped[feature], width=data_grouped['pct'], color=color)
                     for index, value in enumerate(data_grouped['pct']):
                         # Adjusting the text position based on the width of the bars
-                        ax.text(value + 0.5, index, f'{value:.1f}%', va='center', fontsize=15)
+                        ax.text(value + text_y, index, f'{value:.1f}%', va='center', fontsize=15)
                 
                 ax.set_yticks(ticks=range(data_grouped[feature].nunique()), labels=data_grouped[feature].tolist(), fontsize=15)
                 ax.spines['top'].set_visible(False)
@@ -266,13 +267,9 @@ def plot_woe_bad_rate_by_variable(data, variable_name, figsize=(20, 5), rotation
         woe = data.reset_index().iloc[:-1, -2].astype('float')
         good_row = data.reset_index().iloc[:-1, 3].astype('float')
         bad_row = data.reset_index().iloc[:-1, 4].astype('float')
-
-        ax[0].plot(categories, woe, marker='o', linestyle='--')
-        ax[0].set_title(f'WoE by {variable_name}')
-        ax[0].set_xticks(categories.unique().tolist(), categories.unique().tolist(), rotation=rotation)
         
-        good_bars = ax[1].barh(y=categories, width=good_row, color='#8a817c', label='Good')
-        bad_bars = ax[1].barh(y=categories, width=bad_row, left=good_row, color='#8d0801', label='Bad')
+        bad_bars = ax[0].barh(y=categories, width=bad_row, color='#8d0801', label='Bad')
+        good_bars = ax[0].barh(y=categories, width=good_row, left=bad_row, color='#8a817c', label='Good')
 
         # Annotate percentage values inside each bar
         for good_bar, bad_bar, good_rate, bad_rate in zip(good_bars, bad_bars, good_row, bad_row):
@@ -280,14 +277,19 @@ def plot_woe_bad_rate_by_variable(data, variable_name, figsize=(20, 5), rotation
             x_position_bad = bad_bar.get_x() + bad_bar.get_width() / 2  
             y_position = good_bar.get_y() + good_bar.get_height() / 2
 
-            ax[1].text(x_position_good, y_position, f'{good_rate}%', ha='center', va='center', color='white', fontsize=10)
-            ax[1].text(x_position_bad, y_position, f'{bad_rate}%', ha='center', va='center', color='white', fontsize=10)
+            ax[0].text(x_position_good, y_position, f'{good_rate}%', ha='center', va='center', color='white', fontsize=10)
+            ax[0].text(x_position_bad, y_position, f'{bad_rate}%', ha='center', va='center', color='white', fontsize=10)
 
-        ax[1].set_title(f'Default rate by {variable_name}')
-        ax[1].set_yticks(range(len(categories)), categories)
-        ax[1].xaxis.set_visible(False)
-        ax[1].invert_yaxis()
-        ax[1].grid(False)
-        ax[1].legend(bbox_to_anchor=(1, 1.1), loc='center')
+        ax[0].set_title(f'Default rate by {variable_name}')
+        ax[0].set_yticks(range(len(categories)), categories)
+        ax[0].xaxis.set_visible(False)
+        ax[0].invert_yaxis()
+        ax[0].grid(False)
+        ax[0].legend(bbox_to_anchor=(-0.2, 1.1), loc='upper left')
+        
+        ax[1].plot(categories, woe, marker='o', linestyle='--')
+        ax[1].set_title(f'WoE by {variable_name}')
+        ax[1].set_xticks(categories.unique().tolist(), categories.unique().tolist(), rotation=rotation)
+        
     except Exception as e:
         raise CustomException(e, sys)
