@@ -51,7 +51,7 @@ def univariate_analysis_plots(data, features, histplot=True, barplot=False, mean
     '''
     
     try:
-        # Getting num_features and num_rows and iterating over the sublot dimensions.
+        # Get num_features and num_rows and iterating over the sublot dimensions.
         num_features = len(features)
         num_rows = num_features // 3 + (num_features % 3 > 0) 
         
@@ -69,14 +69,14 @@ def univariate_analysis_plots(data, features, histplot=True, barplot=False, mean
                     data_grouped[mean] = round(data_grouped[mean], 2)
                     bars = ax.barh(y=data_grouped[feature], width=data_grouped[mean], color=color)
                     for index, value in enumerate(data_grouped[mean]):
-                        # Adjusting the text position based on the width of the bars
+                        # Adjust the text position based on the width of the bars
                         ax.text(value + text_y, index, f'{value:.1f}', va='center', fontsize=15)
                 else:
                     data_grouped = data.groupby([feature])[[feature]].count().rename(columns={feature: 'count'}).reset_index()
                     data_grouped['pct'] = round(data_grouped['count'] / data_grouped['count'].sum() * 100, 2)
                     bars = ax.barh(y=data_grouped[feature], width=data_grouped['pct'], color=color)
                     for index, value in enumerate(data_grouped['pct']):
-                        # Adjusting the text position based on the width of the bars
+                        # Adjust the text position based on the width of the bars
                         ax.text(value + text_y, index, f'{value:.1f}%', va='center', fontsize=15)
                 
                 ax.set_yticks(ticks=range(data_grouped[feature].nunique()), labels=data_grouped[feature].tolist(), fontsize=15)
@@ -88,17 +88,17 @@ def univariate_analysis_plots(data, features, histplot=True, barplot=False, mean
                 ax.get_xaxis().set_visible(False)
                 
             elif outliers:
-                # Plotting univariate boxplot.
+                # Plot univariate boxplot.
                 sns.boxplot(data=data, x=feature, ax=ax, color=color)
 
             else:
-                # Plotting histplot.
+                # Plot histplot.
                 sns.histplot(data=data, x=feature, kde=kde, ax=ax, color=color, stat='percent')
 
             ax.set_title(feature)  
             ax.set_xlabel('')  
         
-        # Removing unused axes.
+        # Remove unused axes.
         if num_features < len(axes.flat):
             for j in range(num_features, len(axes.flat)):
                 fig.delaxes(axes.flat[j])
@@ -192,7 +192,7 @@ def default_analysis(cat_variable, variable_name, data, continuous=False, not_or
     ```
     '''
     try:
-        # Obtaining the discrete variable (already cut) and a copy of the original data.
+        # Obtain the discrete variable (already cut) and a copy of the original data.
         cat_name = f'{variable_name}_cat'
         default_analysis_df = data.copy()
         default_analysis_df[cat_name] = cat_variable
@@ -200,7 +200,7 @@ def default_analysis(cat_variable, variable_name, data, continuous=False, not_or
         if continuous:
             default_analysis_df[cat_name] = default_analysis_df[cat_name].apply(lambda x: f'{round(x.left)}-{round(x.right)}')
         
-        # Grouping the data and adding the interesting columns.
+        # Group the data and adding the interesting columns.
         grouped_n_obs = default_analysis_df.groupby([cat_name])[['default']].count().reset_index().rename(columns={'default': 'n_obs'})
         grouped_n_obs['obs_proportion (%)'] = grouped_n_obs['n_obs'] / grouped_n_obs['n_obs'].sum()
         good_proportion = default_analysis_df.groupby([cat_name])[['default']].mean().reset_index().rename(columns={'default': 'good_row (%)'}).drop(columns=[cat_name])
