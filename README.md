@@ -107,7 +107,7 @@ Lending Club's current investment portfolio presents the following characteristi
 - ⁠Create the target variables for the PD (stablishing a default definition and assigning 1 to good borrowers and 0 to bad borrowers in order to interpret positive coefficients as positive outcomes), EAD (credit conversion factor) and LGD (recovery rate) models.
 - ⁠Search and fix inconsistent outlier values.
 - ⁠Optimize memory, obtaining a final parquet file.
-- As a result, we went from 75 features to a dataset with 39 variables in its correct data types, optimized in terms of memory usage, with some missing values and outliers treat and new useful extracted features. 
+- As a result, we went from 75 features to a dataset with 42 variables in its correct data types, optimized in terms of memory usage, with some missing values and outliers treat and new useful extracted features. 
 
 **7.2 Exploratory data analysis:**
 - The goal of the exploratory data analysis was to **investigate Lending Club's current investment portfolio's personal, financial, and credit risk indicators**, as previously mentioned. Additionally, in this step, I **determined** the final set of **dummy variables** to construct for the **PD Model**, essentially outlining the preprocessing steps to be undertaken.
