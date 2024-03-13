@@ -22,31 +22,24 @@ from warnings import filterwarnings
 filterwarnings('ignore')
 
 
-def sns_plots(data, features, histplot=True, countplot=False,     
-              barplot=False, barplot_y=None, boxplot=False, 
-              boxplot_x=None, outliers=False, kde=False, 
-              hue=None, rotation=None, color='#8d0801'):
+def univariate_analysis_plots(data, features, histplot=True, barplot=False, mean=None,     
+                              outliers=False, kde=False, color='#8d0801', figsize=(24, 12)):
     '''
-    Generate Seaborn plots for visualization.
+    Generate plots for univariate analysis.
 
-    This function generates various types of Seaborn plots based on the provided
-    data and features. Supported plot types include histograms, count plots,
-    bar plots, box plots, and more.
+    This function generates histograms, horizontal bar plots 
+    and boxplots based on the provided data and features. 
 
     Args:
         data (DataFrame): The DataFrame containing the data to be visualized.
         features (list): A list of feature names to visualize.
         histplot (bool, optional): Generate histograms. Default is True.
-        countplot (bool, optional): Generate count plots. Default is False.
-        barplot (bool, optional): Generate bar plots. Default is False.
-        barplot_y (str, optional): The name of the feature for the y-axis in bar plots.
-        boxplot (bool, optional): Generate box plots. Default is False.
-        boxplot_x (str, optional): The name of the feature for the x-axis in box plots.
-        outliers (bool, optional): Show outliers in box plots. Default is False.
+        barplot (bool, optional): Generate horizontal bar plots. Default is False.
+        mean (bool, optional): Generate mean bar plots of specified feature instead of proportion bar plots. Default is None.
+        outliers (bool, optional): Generate boxplots for outliers visualization. Default is False.
         kde (bool, optional): Plot Kernel Density Estimate in histograms. Default is False.
-        hue (str, optional): The name of the feature to use for color grouping. Default is None.
-        rotation (int, optional): The xticks rotation for high cardinality features plots. Default is None.
         color (str, optional): The color of the plot. Default is '#8d0801'.
+        figsize (tuple, optional): The figsize of the plot. Default is (24, 12).
 
     Returns:
         None
@@ -59,9 +52,9 @@ def sns_plots(data, features, histplot=True, countplot=False,
     try:
         # Getting num_features and num_rows and iterating over the sublot dimensions.
         num_features = len(features)
-        num_rows = num_features // 3 + (num_features % 3 > 0)  
-
-        fig, axes = plt.subplots(num_rows, 3, figsize=(20, 5*num_rows))  
+        num_rows = num_features // 3 + (num_features % 3 > 0) 
+        
+        fig, axes = plt.subplots(num_rows, 3, figsize=figsize)  
 
         for i, feature in enumerate(features):
             row = i // 3  
@@ -69,37 +62,40 @@ def sns_plots(data, features, histplot=True, countplot=False,
 
             ax = axes[row, col] if num_rows > 1 else axes[col] 
             
-            if countplot:
-                # Plotting countplot and adding the counts at the top of each bar.
-                sns.countplot(data=data, x=feature, hue=hue, ax=ax, color=color)
-                for container in ax.containers:
-                    ax.bar_label(container)
-
-            elif barplot:
-                # Plotting barplot and adding the averages at the top of each bar.
-                ax = sns.barplot(data=data, x=feature, y=barplot_y, hue=hue, ax=ax, ci=None, color=color)
-                for container in ax.containers:
-                    ax.bar_label(container)
-
-            elif boxplot:
-                # Plotting multivariate boxplot.
-                sns.boxplot(data=data, x=boxplot_x, y=feature, showfliers=outliers, ax=ax, color=color)
-
+            if barplot:
+                if mean:
+                    data_grouped = data.groupby([feature])[[mean]].mean().reset_index()
+                    data_grouped[mean] = round(data_grouped[mean], 2)
+                    bars = ax.barh(y=data_grouped[feature], width=data_grouped[mean], color=color)
+                    for index, value in enumerate(data_grouped[mean]):
+                        # Adjusting the text position based on the width of the bars
+                        ax.text(value + 0.5, index, f'{value:.1f}', va='center', fontsize=15)
+                else:
+                    data_grouped = data.groupby([feature])[[feature]].count().rename(columns={feature: 'count'}).reset_index()
+                    data_grouped['pct'] = round(data_grouped['count'] / data_grouped['count'].sum() * 100, 2)
+                    bars = ax.barh(y=data_grouped[feature], width=data_grouped['pct'], color=color)
+                    for index, value in enumerate(data_grouped['pct']):
+                        # Adjusting the text position based on the width of the bars
+                        ax.text(value + 0.5, index, f'{value:.1f}%', va='center', fontsize=15)
+                
+                ax.set_yticks(ticks=range(data_grouped[feature].nunique()), labels=data_grouped[feature].tolist(), fontsize=15)
+                ax.spines['top'].set_visible(False)
+                ax.spines['right'].set_visible(False)
+                ax.spines['bottom'].set_visible(False)
+                ax.spines['left'].set_visible(False)
+                ax.grid(False)
+                ax.get_xaxis().set_visible(False)
+                
             elif outliers:
                 # Plotting univariate boxplot.
                 sns.boxplot(data=data, x=feature, ax=ax, color=color)
 
             else:
                 # Plotting histplot.
-                sns.histplot(data=data, x=feature, hue=hue, kde=kde, ax=ax, color=color)
+                sns.histplot(data=data, x=feature, kde=kde, ax=ax, color=color, stat='percent')
 
             ax.set_title(feature)  
             ax.set_xlabel('')  
-            
-        # Adjusting xticks rotation for high cardinality variables.
-        if rotation is not None:
-            for ax in axes.flat:
-                ax.tick_params(axis='x', rotation=rotation)
         
         # Removing unused axes.
         if num_features < len(axes.flat):
@@ -110,6 +106,7 @@ def sns_plots(data, features, histplot=True, countplot=False,
     
     except Exception as e:
         raise CustomException(e, sys)
+
 
 
 def check_outliers(data, features):
