@@ -96,19 +96,21 @@ def compute_credit_policy(data, pd_data, ead_data, lgd_data, loan_fee, auto_appr
         credit_policy_df['ROI (%)'] = ((gains - losses - costs) / investment)
         credit_policy_df['Annualized ROI (%)'] = round(credit_policy_df['ROI (%)'] / term_years, 3)
 
-        # Create risk classes based on the probability of default.
+        # Define the conditions and corresponding risk classes.
         conditions = [
-            (credit_policy_df['Probability of Default (PD)'] >= 0) & (credit_policy_df['Probability of Default (PD)'] < 0.01),
-            (credit_policy_df['Probability of Default (PD)'] >= 0.01) & (credit_policy_df['Probability of Default (PD)'] < 0.025),
-            (credit_policy_df['Probability of Default (PD)'] >= 0.025) & (credit_policy_df['Probability of Default (PD)'] < 0.05),
-            (credit_policy_df['Probability of Default (PD)'] >= 0.05) & (credit_policy_df['Probability of Default (PD)'] < 0.1),
-            (credit_policy_df['Probability of Default (PD)'] >= 0.1) & (credit_policy_df['Probability of Default (PD)'] < 0.15),
-            (credit_policy_df['Probability of Default (PD)'] >= 0.15) & (credit_policy_df['Probability of Default (PD)'] < 0.2),
-            (credit_policy_df['Probability of Default (PD)'] >= 0.2) & (credit_policy_df['Probability of Default (PD)'] < 0.25),
-            (credit_policy_df['Probability of Default (PD)'] >= 0.25) & (credit_policy_df['Probability of Default (PD)'] <= 1)
+            (credit_policy_df['Score'] >= 688) & (credit_policy_df['Score'] <= 850),
+            (credit_policy_df['Score'] > 656) & (credit_policy_df['Score'] <= 694),
+            (credit_policy_df['Score'] > 635) & (credit_policy_df['Score'] <= 661),
+            (credit_policy_df['Score'] > 618) & (credit_policy_df['Score'] <= 640),
+            (credit_policy_df['Score'] > 602) & (credit_policy_df['Score'] <= 622),
+            (credit_policy_df['Score'] > 587) & (credit_policy_df['Score'] <= 607),
+            (credit_policy_df['Score'] > 572) & (credit_policy_df['Score'] <= 592),
+            (credit_policy_df['Score'] > 554) & (credit_policy_df['Score'] <= 579),
+            (credit_policy_df['Score'] > 530) & (credit_policy_df['Score'] <= 559),
+            (credit_policy_df['Score'] > 300) & (credit_policy_df['Score'] <= 534)
         ]
 
-        risk_classes = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H']
+        risk_classes = ['AA', 'A', 'AB', 'BB', 'B', 'BC', 'C', 'CD', 'DD', 'F']
 
         # Assign the risk class based on conditions.
         credit_policy_df['Risk Class'] = np.select(conditions, risk_classes)
