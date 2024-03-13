@@ -14,8 +14,6 @@
 **2.2 What is the business problem?**
 - LendingClub faces a significant business challenge related to **managing default risks effectively** while **optimizing returns** for its investors. The platform facilitates peer-to-peer lending, connecting borrowers with investors, and relies on **accurate risk assessments to maintain a sustainable and profitable lending ecosystem.** Thus, the CEO wants us to provide insights about which factors are associated with credit risk in Lending Club's operations, and to construct models capable of predicting the probability of default for new applicants and possible losses on its loans in order to establish a credit policy, deciding when to grant a loan or not for an applicant. An important observation is that the CEO wants these models to be easy to understand. Since our company works on the internet, making customers happy and being clear is really important. So, we need to be able to explain why we decide to approve or deny a loan.
 
-- <img src="reports/default_rate.png">
-
 **2.3 Which are the project objectives and benefits?**
 1. Identify the factors associated with **credit risk** in the form of business **insights.**
 2. Develop an accurate **Probability of Default (PD) Model**, constructing a scorecard. This will allow Lending Club to decide wheter to grant a loan or not to a new applicant (**application model**), based on **credit scores.**
@@ -68,6 +66,8 @@ Lending Club's current investment portfolio presents the following characteristi
 - The reason for taking out 80% of the loans is to either consolidate debt or use them for credit card payments.
 - Over 15% live in California.
 - Everything pointed out above suggests a conservative profile among applicants: older individuals with financial and professional stability.
+
+<img src="reports/default_rate.png">
 
 <img src="reports/personal_indicators.png">
 
